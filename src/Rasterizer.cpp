@@ -1,15 +1,14 @@
 #include "Rasterizer.h"
 #include <cmath>
 
-Rasterizer::Rasterizer(std::string file, ftxui::Canvas* c) {
+Rasterizer::Rasterizer(std::string file) {
     _in = file;
-    _out = c;
     _transparent = false;
     _fragmentShading = false;
 }
 
 // the graphics pipeline
-void Rasterizer::pipeline() {
+void Rasterizer::pipeline(uint32_t* pixels) {
 
     if (_nff.parse(_in) < 0) abort();
 
@@ -27,7 +26,7 @@ void Rasterizer::pipeline() {
     Eigen::Vector3d* image = new Eigen::Vector3d[_nff._res.first * _nff._res.second]();
     blend(fragments, image);
 
-    writeImage(image);
+    writeImage(image, pixels);
 
     delete[] fragments;
     delete[] image;
@@ -293,15 +292,15 @@ void Rasterizer::blend(std::vector<Fragment>* frags, Eigen::Vector3d* im) {
     }
 }
 
-void Rasterizer::writeImage(Eigen::Vector3d* im) {
+void Rasterizer::writeImage(Eigen::Vector3d* im, uint32_t* pixels) {
     // outputting the image
     int r, g, b;
     for (int y=0; y<_nff._res.second; y++) {
-        for (int x=0; x<_nff._res.first; x++, im++) {
-            r = int(std::min(1.0, std::max(0.0, (*im)[0])) * 255.0);
-            g = int(std::min(1.0, std::max(0.0, (*im)[1])) * 255.0);
-            b = int(std::min(1.0, std::max(0.0, (*im)[2])) * 255.0);
-            _out->DrawBlock(x, y, true, ftxui::Color::RGB(r, g, b));
+        for (int x=0; x<_nff._res.first; x++, im++, pixels++) {
+            r = uint8_t(std::min(1.0, std::max(0.0, (*im)[0])) * 255.0);
+            g = uint8_t(std::min(1.0, std::max(0.0, (*im)[1])) * 255.0);
+            b = uint8_t(std::min(1.0, std::max(0.0, (*im)[2])) * 255.0);
+            *pixels = (r << 16) | (g << 8) | b;
         }
     }
 }

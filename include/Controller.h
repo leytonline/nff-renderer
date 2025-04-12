@@ -1,4 +1,3 @@
-#include <ftxui/component/component.hpp>
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 
@@ -8,7 +7,6 @@ public:
     ~Controller();
     void Handle();
 private:
-    
 };
 
 #endif

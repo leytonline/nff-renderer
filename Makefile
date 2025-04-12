@@ -1,11 +1,11 @@
 # Compiler
 CXX = g++
-CXXFLAGS = -Wall -Wextra -std=c++17 -Iinclude -Linclude/ftxui/lib # Include headers from "include/"
+CXXFLAGS = -Wall -Wextra -std=c++17 -Iinclude 
 EIGEN = -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3
-FTXUI = -lftxui-component -lftxui-dom -lftxui-screen
+SDL2 = -I/opt/homebrew/Cellar/sdl2/2.32.4/include/ -L/opt/homebrew/Cellar/sdl2/2.32.4/lib/  -lSDL2
 
 main: main.cpp obj/Nff.o obj/Geometry.o obj/Rasterizer.o
-	$(CXX) $(CXXFLAGS) $(EIGEN) $(FTXUI) obj/Geometry.o obj/Nff.o obj/Rasterizer.o main.cpp -o main
+	$(CXX) $(CXXFLAGS) $(EIGEN) $(SDL2) obj/Geometry.o obj/Nff.o obj/Rasterizer.o main.cpp -o main
 
 obj/Geometry.o: src/Geometry.cpp include/Geometry.h
 	$(CXX) $(CXXFLAGS) $(EIGEN) -c src/Geometry.cpp -o obj/Geometry.o
