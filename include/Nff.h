@@ -29,6 +29,9 @@ public:
     std::pair<int, int> _res;
     std::vector<Triangle*> _surfaces;
     std::vector<Light> _lights;
+    Eigen::Vector3d getFrom() {
+        return _from;
+    }
 };
 
 #endif
