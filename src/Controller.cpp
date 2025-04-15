@@ -27,7 +27,9 @@ void Controller::Handle(ControllerInput::ArrowKey key) {
 
 void Controller::InitializeView(const Eigen::Vector3d& p) {
     _pos = p; // view point
-    _axis = Eigen::Vector3d(p[1], -p[0], 0).normalized(); // perpendicular to view directed left of view, flattened onto xy plane
+
+    // have to get the line orthogonal to both at-from AND then project it orthogonal to NFF up
+    _axis = Eigen::Vector3d(p[1], -p[0], p[2]).normalized(); // perpendicular to view directed left of view, flattened onto xy plane
 }
 
 const Eigen::Vector3d& Controller::GetPosition() {

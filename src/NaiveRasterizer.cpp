@@ -34,8 +34,8 @@ void NaiveRasterizer::Render(uint32_t* pixels, const Eigen::Vector3d& pos) {
 // get the entire projection matrix M
 Eigen::Matrix4d NaiveRasterizer::calcM(const Eigen::Vector3d& pos) {
 
-    Eigen::Vector3d w = -(Eigen::Vector3d(0,0,0)-pos).normalized();
-    Eigen::Vector3d u = Eigen::Vector3d(0,0,1).cross(w).normalized();
+    Eigen::Vector3d w = -(_nff->_at-pos).normalized();
+    Eigen::Vector3d u = _nff->_up.cross(w).normalized();
     Eigen::Vector3d v = u.cross(-w);
 
     // calculate all of the stuff needed
