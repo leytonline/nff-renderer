@@ -1,7 +1,7 @@
 #include <stdio.h>                 
 #include <vector>        
 #include <SDL2/SDL.h>    
-#include "Rasterizer.h"
+#include "NaiveRasterizer.h"
 #include "Controller.h"
 
 #define HEIGHT 512
@@ -33,7 +33,7 @@ int main() {
     }
 
     Controller c;
-    Rasterizer r;
+    NaiveRasterizer r;
     r.SetNff(&scene);
     c.InitializeView(scene.getFrom());
 
@@ -62,7 +62,7 @@ int main() {
             }
         }
 
-        r.pipeline(px, c.GetPosition());
+        r.Render(px, c.GetPosition());
         SDL_UpdateTexture(texture, nullptr, px, WIDTH * sizeof(uint32_t));
         SDL_RenderClear(renderer);
         SDL_RenderCopy(renderer, texture, nullptr, nullptr);

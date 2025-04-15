@@ -1,5 +1,6 @@
 #include "Nff.h"
 #include "Geometry.h"
+#include "Renderer.h"
 #include "Eigen/Dense"
 #include <stdio.h>
 #include <algorithm>
@@ -8,10 +9,10 @@
 #ifndef RASTER_H
 #define RASTER_H
 
-class Rasterizer {
+class NaiveRasterizer : public Renderer {
 public:
-    Rasterizer();
-    void pipeline(uint32_t*, const Eigen::Vector3d&);
+    NaiveRasterizer();
+    void Render(uint32_t*, const Eigen::Vector3d&);
     Eigen::Matrix4d calcM(const Eigen::Vector3d&);
     void processVertices(std::vector<Triangle>&, Eigen::Matrix4d m);
     void shadeTriangle(Triangle*, std::vector<Eigen::Vector3d>&);
@@ -20,14 +21,11 @@ public:
     void blend(std::vector<Fragment>*, Eigen::Vector3d*);
     void writeImage(Eigen::Vector3d*, uint32_t*);
     void processFragments(std::vector<Fragment>*);
-    void SetNff(Nff* n) {
-        _nff = n;
-    }
+    void SetNff(Nff* n);
 public: // separated for vars
     Nff *_nff;
     bool _transparent;
     double _transparency;
-    std::string _in;
     bool _fragmentShading;
 
 };

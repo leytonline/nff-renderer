@@ -1,11 +1,12 @@
 # Compiler
-CXX = g++
+CXX = clang++
 CXXFLAGS = -Wall -Wextra -std=c++17 -Iinclude 
 EIGEN = -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3
 SDL2 = -I/opt/homebrew/Cellar/sdl2/2.32.4/include/ -L/opt/homebrew/Cellar/sdl2/2.32.4/lib/  -lSDL2
+OBJS = obj/Geometry.o obj/Controller.o obj/Nff.o obj/NaiveRasterizer.o obj/Renderer.o
 
-main: main.cpp obj/Nff.o obj/Geometry.o obj/Rasterizer.o obj/Controller.o
-	$(CXX) $(CXXFLAGS) $(EIGEN) $(SDL2) obj/Geometry.o obj/Nff.o obj/Rasterizer.o obj/Controller.o main.cpp -o main
+main: main.cpp $(OBJS)
+	$(CXX) $(CXXFLAGS) $(EIGEN) $(SDL2) $(OBJS) main.cpp -o main
 
 obj/Geometry.o: src/Geometry.cpp include/Geometry.h
 	$(CXX) $(CXXFLAGS) $(EIGEN) -c src/Geometry.cpp -o obj/Geometry.o
@@ -16,13 +17,12 @@ obj/Controller.o: src/Controller.cpp include/Controller.h
 obj/Nff.o: src/Nff.cpp include/Nff.h obj/Geometry.o
 	$(CXX) $(CXXFLAGS) $(EIGEN) -c src/Nff.cpp -o obj/Nff.o
 
-obj/Rasterizer.o: src/Rasterizer.cpp include/Rasterizer.h obj/Nff.o obj/Geometry.o
-	$(CXX) $(CXXFLAGS) $(EIGEN) -c src/Rasterizer.cpp -o obj/Rasterizer.o
+obj/NaiveRasterizer.o: src/NaiveRasterizer.cpp include/NaiveRasterizer.h obj/Nff.o obj/Geometry.o
+	$(CXX) $(CXXFLAGS) $(EIGEN) -c src/NaiveRasterizer.cpp -o obj/NaiveRasterizer.o
 
+obj/Renderer.o: src/Renderer.cpp include/Renderer.h 
+	$(CXX) $(CXXFLAGS) $(EIGEN) -c src/Renderer.cpp -o obj/Renderer.o
 
-# Clean rule to remove compiled files
 clean:
-	rm obj/*.o
-
-# Phony targets (so "clean" always runs)
-.PHONY: clean
+	rm -f obj/*.o
+	rm -f main

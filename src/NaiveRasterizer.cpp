@@ -1,13 +1,13 @@
-#include "Rasterizer.h"
+#include "NaiveRasterizer.h"
 #include <cmath>
 
-Rasterizer::Rasterizer() {
+NaiveRasterizer::NaiveRasterizer() {
     _transparent = false;
     _fragmentShading = false;
 }
 
 // the graphics pipeline
-void Rasterizer::pipeline(uint32_t* pixels, const Eigen::Vector3d& pos) {
+void NaiveRasterizer::Render(uint32_t* pixels, const Eigen::Vector3d& pos) {
 
     Eigen::Matrix4d m = calcM(pos);
 
@@ -32,7 +32,7 @@ void Rasterizer::pipeline(uint32_t* pixels, const Eigen::Vector3d& pos) {
 }
 
 // get the entire projection matrix M
-Eigen::Matrix4d Rasterizer::calcM(const Eigen::Vector3d& pos) {
+Eigen::Matrix4d NaiveRasterizer::calcM(const Eigen::Vector3d& pos) {
 
     Eigen::Vector3d w = -(Eigen::Vector3d(0,0,0)-pos).normalized();
     Eigen::Vector3d u = Eigen::Vector3d(0,0,1).cross(w).normalized();
@@ -65,7 +65,7 @@ Eigen::Matrix4d Rasterizer::calcM(const Eigen::Vector3d& pos) {
 }
 
 // transform and shade vertices, placing them in transforms vector
-void Rasterizer::processVertices(std::vector<Triangle>& transforms, Eigen::Matrix4d m) {
+void NaiveRasterizer::processVertices(std::vector<Triangle>& transforms, Eigen::Matrix4d m) {
 
     for (unsigned i = 0; i < _nff->_surfaces.size(); i++)
     {
@@ -106,7 +106,7 @@ void Rasterizer::processVertices(std::vector<Triangle>& transforms, Eigen::Matri
 
 // given some vertex, shade it. Assumes world coordinates for V
 // wil put the shaded triangle in the referenced vector
-void Rasterizer::shadeTriangle(Triangle* t, std::vector<Eigen::Vector3d>& c) {
+void NaiveRasterizer::shadeTriangle(Triangle* t, std::vector<Eigen::Vector3d>& c) {
 
     double intensity = 1 / sqrt(_nff->_lights.size());
     Fill& f = t->_fill;
@@ -153,7 +153,7 @@ void Rasterizer::shadeTriangle(Triangle* t, std::vector<Eigen::Vector3d>& c) {
 }
 
 // calculate bounding boxes and generate fragments
-void Rasterizer::rasterize(std::vector<Triangle>& tris, std::vector<Fragment>* frags) {
+void NaiveRasterizer::rasterize(std::vector<Triangle>& tris, std::vector<Fragment>* frags) {
 
     for (unsigned i = 0; i < tris.size(); i++)
     {
@@ -184,7 +184,7 @@ inline double f20(double x, double y, Triangle& t) {
            - t._vertices[0][0] * t._vertices[2][1];
 }
 
-void Rasterizer::raster(Triangle& t, std::vector<Fragment>* frags) {
+void NaiveRasterizer::raster(Triangle& t, std::vector<Fragment>* frags) {
 
     int bxMin = _nff->_res.first, bxMax = 0, byMin = _nff->_res.second, byMax = 0;
 
@@ -267,7 +267,7 @@ struct cmpr {
 };
 
 // blend the fragments into the image
-void Rasterizer::blend(std::vector<Fragment>* frags, Eigen::Vector3d* im) {
+void NaiveRasterizer::blend(std::vector<Fragment>* frags, Eigen::Vector3d* im) {
     for (int i = 0; i < _nff->_res.first * _nff->_res.second; i++, im++)
     {
         // assume background color
@@ -293,7 +293,7 @@ void Rasterizer::blend(std::vector<Fragment>* frags, Eigen::Vector3d* im) {
     }
 }
 
-void Rasterizer::writeImage(Eigen::Vector3d* im, uint32_t* pixels) {
+void NaiveRasterizer::writeImage(Eigen::Vector3d* im, uint32_t* pixels) {
     // outputting the image
     int r, g, b;
     for (int y=0; y<_nff->_res.second; y++) {
@@ -306,7 +306,7 @@ void Rasterizer::writeImage(Eigen::Vector3d* im, uint32_t* pixels) {
     }
 }
 
-void Rasterizer::processFragments(std::vector<Fragment>* f) {
+void NaiveRasterizer::processFragments(std::vector<Fragment>* f) {
 
     double intensity = 1 / sqrt(_nff->_lights.size());
 
@@ -334,5 +334,8 @@ void Rasterizer::processFragments(std::vector<Fragment>* f) {
             f[i][j]._color = color;
         }
     }
+}
 
+void NaiveRasterizer::SetNff(Nff* n) {
+    _nff = n;
 }
