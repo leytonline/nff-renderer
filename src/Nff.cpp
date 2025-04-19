@@ -66,6 +66,7 @@ int Nff::parse(std::string f) {
     Eigen::Vector3d coords;
     std::vector<std::string> failBuffer;
     int vertices = 0;
+    Eigen::Vector3d shift;
     
 
     while (getline(file, line))
@@ -93,6 +94,8 @@ int Nff::parse(std::string f) {
                 ss.clear();
                 ss.str(temp);
                 ss >> skip >> _at[0] >> _at[1] >> _at[2];
+                shift = -_at;
+                _at << 0,0,0;
 
                 // up
                 getline(file, temp);
@@ -150,6 +153,7 @@ int Nff::parse(std::string f) {
                     norms.push_back(norm);
                 }
 
+                coords += shift;
                 verts.push_back(coords);
 
                 getline(file, line);
@@ -164,6 +168,8 @@ int Nff::parse(std::string f) {
                     base >> norm[0] >> norm[1] >> norm[2];
                     norms.push_back(norm);
                 }
+
+                coords += shift;
                 verts.push_back(coords);
 
                 Eigen::Vector3d normalOverride;
@@ -178,6 +184,7 @@ int Nff::parse(std::string f) {
 
                     // get newest (3rd) vertex
                     parser >> coords[0] >> coords[1] >> coords[2];
+                    coords += shift;
                     verts.push_back(coords);
                     if (patch) 
                     {

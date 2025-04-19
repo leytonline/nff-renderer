@@ -21,7 +21,7 @@ public:
     void Handle(ControllerInput::ArrowKey);
 
     // load the initial view point from the scene, define up/down rotation axis as direction pointing left of camera
-    void InitializeView(const Eigen::Vector3d&);
+    void InitializeView(const Eigen::Vector3d&, const Eigen::Vector3d&, const Eigen::Vector3d&);
 
     // Get the position the view is currently at (for the point to render from)
     const Eigen::Vector3d& GetPosition();
@@ -30,10 +30,10 @@ private:
     void rotateLeft();
     void rotateUp();
     void rotateDown();
-    void updateAxis(const Eigen::AngleAxisd&);
+    Eigen::Vector3d viewDir() const;
+    Eigen::Vector3d horizontalAxis() const;
 
-    Eigen::Vector3d _pos;
-    Eigen::Vector3d _axis;
+    Eigen::Vector3d _pos, _up, _at;
 };
 
 #endif

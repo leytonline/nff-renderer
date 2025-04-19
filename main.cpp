@@ -26,7 +26,7 @@ int main() {
     uint32_t *px = new uint32_t[WIDTH * HEIGHT];    
 
     Nff scene;
-    if (scene.parse("scenes/teapot-3.nff") < 0)
+    if (scene.parse("scenes/tetra-3.nff") < 0)
     {
         printf("Failed to parse nff image");
         abort();
@@ -35,9 +35,8 @@ int main() {
     Controller c;
     NaiveRasterizer r;
     r.SetNff(&scene);
-    c.InitializeView(scene.getFrom());
+    c.InitializeView(scene.GetFrom(), scene.GetUp(), scene.GetAt()); // 0,0,0 at
 
-    // Simple wait until window is closed
     SDL_Event e;
     bool running = true;
     while (running) {
@@ -68,7 +67,7 @@ int main() {
         SDL_RenderCopy(renderer, texture, nullptr, nullptr);
         SDL_RenderPresent(renderer);
 
-        SDL_Delay(10); // chill loop
+        SDL_Delay(10); 
     }
 
     delete[] px;
