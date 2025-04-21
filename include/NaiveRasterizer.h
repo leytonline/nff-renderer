@@ -21,12 +21,16 @@ public:
     void blend(std::vector<Fragment>*, Eigen::Vector3d*);
     void writeImage(Eigen::Vector3d*, uint32_t*);
     void processFragments(std::vector<Fragment>*);
+    void SetAxisDebug(bool);
     void SetNff(Nff* n);
 public: // separated for vars
     Nff *_nff;
     bool _transparent;
     double _transparency;
     bool _fragmentShading;
+    bool _debug;
+private:
+    void drawDebugAxes(Eigen::Vector3d*, const Eigen::Vector3d&);
 
 };
 

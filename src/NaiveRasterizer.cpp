@@ -4,6 +4,7 @@
 NaiveRasterizer::NaiveRasterizer() {
     _transparent = false;
     _fragmentShading = false;
+    _debug = false;
 }
 
 // the graphics pipeline
@@ -24,6 +25,8 @@ void NaiveRasterizer::Render(uint32_t* pixels, const Eigen::Vector3d& pos) {
     // blending
     Eigen::Vector3d* image = new Eigen::Vector3d[_nff->_res.first * _nff->_res.second]();
     blend(fragments, image);
+
+    if (_debug) drawDebugAxes(image, pos);
 
     writeImage(image, pixels);
 
@@ -338,4 +341,46 @@ void NaiveRasterizer::processFragments(std::vector<Fragment>* f) {
 
 void NaiveRasterizer::SetNff(Nff* n) {
     _nff = n;
+}
+
+void NaiveRasterizer::SetAxisDebug(bool b) {
+    _debug = b;
+}
+
+// yeah we gotta reevaluate this later
+void NaiveRasterizer::drawDebugAxes(Eigen::Vector3d* im, const Eigen::Vector3d& pos) {
+    Eigen::Matrix4d m = calcM(pos);
+    double scale = 5.0;
+    Eigen::Vector3d origin(0, 0, 0);
+    Eigen::Vector3d x(1, 0, 0), y(0, 1, 0), z(0, 0, 1), up = _nff->_up.normalized();
+
+    auto project = [&](const Eigen::Vector3d& v) {
+        Eigen::Vector4d h; h << v, 1;
+        Eigen::Vector4d r = m * h;
+        r /= r[3];
+        return Eigen::Vector2i((int) round(r[0]), (int) round(r[1]));
+    };
+
+    auto draw = [&](Eigen::Vector2i from, Eigen::Vector2i to, Eigen::Vector3d color) {
+        int x0 = from[0], y0 = from[1], x1 = to[0], y1 = to[1];
+        int dx = abs(x1 - x0), dy = abs(y1 - y0);
+        int sx = x0 < x1 ? 1 : -1;
+        int sy = y0 < y1 ? 1 : -1;
+        int err = dx - dy;
+
+        while (true) {
+            if (x0 >= 0 && x0 < _nff->_res.first && y0 >= 0 && y0 < _nff->_res.second)
+                im[y0 * _nff->_res.first + x0] = color;
+            if (x0 == x1 && y0 == y1) break;
+            int e2 = 2 * err;
+            if (e2 > -dy) { err -= dy; x0 += sx; }
+            if (e2 < dx) { err += dx; y0 += sy; }
+        }
+    };
+
+    Eigen::Vector2i o = project(origin);
+    draw(o, project(origin + scale * x), Eigen::Vector3d(1, 0, 0)); // x axis red
+    draw(o, project(origin + scale * y), Eigen::Vector3d(0, 1, 0)); // y axis green
+    draw(o, project(origin + scale * z), Eigen::Vector3d(0, 0, 1)); // z axis blue
+    draw(o, project(origin + scale * up), Eigen::Vector3d(1, 1, 0)); // up yellow
 }

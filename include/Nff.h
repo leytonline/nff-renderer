@@ -24,6 +24,7 @@ public:
     Eigen::Vector3d _at;
     Eigen::Vector3d _bg;
     Eigen::Vector3d _up;
+    Eigen::Vector3d _maximums;
     double _angle;
     double _hither;
     std::pair<int, int> _res;
