@@ -26,7 +26,7 @@ int main() {
     uint32_t *px = new uint32_t[WIDTH * HEIGHT];    
 
     Nff scene;
-    if (scene.parse("scenes/tetra-3.nff") < 0)
+    if (scene.parse("scenes/teapot-3.nff") < 0)
     {
         printf("Failed to parse nff image");
         abort();
@@ -36,7 +36,7 @@ int main() {
     NaiveRasterizer r;
     r.SetAxisDebug(true);
     r.SetNff(&scene);
-    c.InitializeView(scene.GetFrom(), scene.GetUp(), scene.GetAt()); // 0,0,0 at
+    c.InitializeView(scene.GetFrom(), scene.GetUp(), scene.GetAt()); // 0,0,0 at (not always ?)
 
     SDL_Event e;
     bool running = true;
@@ -44,21 +44,8 @@ int main() {
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT) running = false;
 
-            if (e.type == SDL_KEYDOWN) {
-                switch (e.key.keysym.sym) {
-                    case SDLK_UP:
-                        c.Handle(ControllerInput::UP_ARROW);
-                        break;
-                    case SDLK_DOWN:
-                        c.Handle(ControllerInput::DOWN_ARROW);
-                        break;
-                    case SDLK_LEFT:
-                        c.Handle(ControllerInput::LEFT_ARROW);
-                        break;
-                    case SDLK_RIGHT:
-                    c.Handle(ControllerInput::RIGHT_ARROW);
-                        break;
-                }
+            if (e.type == SDL_KEYDOWN) { // doesn't include mouse input ?
+                c.Handle(e.key.keysym.sym);
             }
         }
 

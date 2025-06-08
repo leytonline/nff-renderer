@@ -12,7 +12,7 @@ obj/Geometry.o: src/Geometry.cpp include/Geometry.h
 	$(CXX) $(CXXFLAGS) $(EIGEN) -c src/Geometry.cpp -o obj/Geometry.o
 
 obj/Controller.o: src/Controller.cpp include/Controller.h
-	$(CXX) $(CXXFLAGS) $(EIGEN) -c src/Controller.cpp -o obj/Controller.o
+	$(CXX) $(CXXFLAGS) $(EIGEN) -c -I/opt/homebrew/Cellar/sdl2/2.32.4/include/ src/Controller.cpp -o obj/Controller.o  # unhappy with long sdl2 import here, otherwise causes unused from lib and link
 
 obj/Nff.o: src/Nff.cpp include/Nff.h obj/Geometry.o
 	$(CXX) $(CXXFLAGS) $(EIGEN) -c src/Nff.cpp -o obj/Nff.o

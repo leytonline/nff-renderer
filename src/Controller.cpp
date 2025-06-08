@@ -7,19 +7,19 @@ Controller::Controller() {
     // maybe make this have more functionality? 
 }
 
-void Controller::Handle(ControllerInput::ArrowKey key) {
-    switch (key)
+void Controller::Handle(SDL_Keycode input) {
+    switch (input)
     {
-        case ControllerInput::UP_ARROW:
+        case SDLK_w:
             rotateUp();
             break;
-        case ControllerInput::DOWN_ARROW:
+        case SDLK_s:
             rotateDown();
             break;
-        case ControllerInput::RIGHT_ARROW:
+        case SDLK_d:
             rotateRight();
             break;
-        case ControllerInput::LEFT_ARROW:
+        case SDLK_a:
             rotateLeft();
             break;
     }
