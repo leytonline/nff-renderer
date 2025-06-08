@@ -347,7 +347,7 @@ void NaiveRasterizer::SetAxisDebug(bool b) {
     _debug = b;
 }
 
-// yeah we gotta reevaluate this later
+// yeah we gotta reevaluate this later, note 2: its ok for now, maybe performance degradation?
 void NaiveRasterizer::drawDebugAxes(Eigen::Vector3d* im, const Eigen::Vector3d& pos) {
     Eigen::Matrix4d m = calcM(pos);
     double scale = 5.0;
