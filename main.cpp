@@ -3,9 +3,14 @@
 #include <SDL2/SDL.h>    
 #include "NaiveRasterizer.h"
 #include "Controller.h"
+#include <ctime>
+#include <chrono>
 
 #define HEIGHT 512
 #define WIDTH 512
+
+const double TICK_RATE = 1. / 128.;
+const double MAX_DT = 0.25;  
 
 int main() {
 
@@ -38,10 +43,23 @@ int main() {
     r.SetNff(&scene);
     c.InitializeView(scene.GetFrom(), scene.GetUp(), scene.GetAt()); // 0,0,0 at (not always ?)
 
+    // END SETUP
+    // BEGIN MAIN LOOP
+
     SDL_Event e;
     bool running = true;
-    while (running) {
-        while (SDL_PollEvent(&e)) {
+    std::chrono::time_point prev_time = std::chrono::high_resolution_clock::now();
+    double accumulator = 0.;
+
+    while (running) 
+    {
+
+        auto now = std::chrono::high_resolution_clock::now();
+        accumulator += std::chrono::duration<double>(now - prev_time).count();
+        prev_time = now;
+
+        while (SDL_PollEvent(&e)) 
+        {
             if (e.type == SDL_QUIT) running = false;
 
             if (e.type == SDL_KEYDOWN) { // doesn't include mouse input ?
@@ -49,6 +67,17 @@ int main() {
             }
         }
 
+        // tick for however long we need to (in case we hung for a while)
+        while (accumulator >= TICK_RATE)
+        {
+            // tick func
+            accumulator -= TICK_RATE;
+        }
+
+        // lerp
+        double alpha = accumulator / TICK_RATE;
+
+        // lerp here
         r.Render(px, c.GetPosition());
         SDL_UpdateTexture(texture, nullptr, px, WIDTH * sizeof(uint32_t));
         SDL_RenderClear(renderer);
@@ -57,6 +86,9 @@ int main() {
 
         SDL_Delay(10); 
     }
+
+
+    // END MAIN LOOP
 
     delete[] px;
     SDL_DestroyTexture(texture);
