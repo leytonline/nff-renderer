@@ -3,10 +3,13 @@ CXX = clang++
 CXXFLAGS = -Wall -Wextra -std=c++17 -Iinclude -O2
 EIGEN = -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3
 SDL2 = -I/opt/homebrew/Cellar/sdl2/2.32.4/include/ -L/opt/homebrew/Cellar/sdl2/2.32.4/lib/ -lSDL2
-OBJS = obj/Geometry.o obj/Controller.o obj/Nff.o obj/NaiveRasterizer.o obj/Renderer.o
+OBJS = obj/Geometry.o obj/Controller.o obj/Nff.o obj/NaiveRasterizer.o obj/Renderer.o obj/Movement.o
 
 main: main.cpp $(OBJS)
 	$(CXX) $(CXXFLAGS) $(EIGEN) $(SDL2) $(OBJS) main.cpp -o main
+
+obj/Movement.o: src/Movement.cpp include/Movement.h
+	$(CXX) $(CXXFLAGS) -c -I/opt/homebrew/Cellar/sdl2/2.32.4/include/ src/Movement.cpp -o obj/Movement.o
 
 obj/Geometry.o: src/Geometry.cpp include/Geometry.h
 	$(CXX) $(CXXFLAGS) $(EIGEN) -c src/Geometry.cpp -o obj/Geometry.o

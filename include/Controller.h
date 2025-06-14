@@ -24,7 +24,6 @@ private:
     void rotateDown();
     Eigen::Vector3d viewDir() const;
     Eigen::Vector3d horizontalAxis() const;
-
     Eigen::Vector3d _pos, _up, _at;
 };
 

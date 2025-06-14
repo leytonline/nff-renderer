@@ -3,6 +3,7 @@
 #include <SDL2/SDL.h>    
 #include "NaiveRasterizer.h"
 #include "Controller.h"
+#include "Movement.h"
 #include <ctime>
 #include <chrono>
 
@@ -50,20 +51,21 @@ int main() {
     bool running = true;
     std::chrono::time_point prev_time = std::chrono::high_resolution_clock::now();
     double accumulator = 0.;
+    Movement::MovementState ms;
 
-    while (running) 
+    while (running)  
     {
 
         auto now = std::chrono::high_resolution_clock::now();
         accumulator += std::chrono::duration<double>(now - prev_time).count();
         prev_time = now;
-
+        ms.Reset();
         while (SDL_PollEvent(&e)) 
         {
             if (e.type == SDL_QUIT) running = false;
 
             if (e.type == SDL_KEYDOWN) { // doesn't include mouse input ?
-                c.Handle(e.key.keysym.sym);
+                ms.HandleInput(e.key.keysym.sym);
             }
         }
 
