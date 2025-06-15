@@ -3,9 +3,15 @@
 #include <SDL2/SDL.h>    
 #include "NaiveRasterizer.h"
 #include "Controller.h"
+#include "Movement.h"
+#include <ctime>
+#include <chrono>
 
 #define HEIGHT 512
 #define WIDTH 512
+
+const double TICK_RATE = 1. / 128.;
+const double MAX_DT = 0.25;  
 
 int main() {
 
@@ -38,25 +44,82 @@ int main() {
     r.SetNff(&scene);
     c.InitializeView(scene.GetFrom(), scene.GetUp(), scene.GetAt()); // 0,0,0 at (not always ?)
 
+    // END SETUP
+    // BEGIN MAIN LOOP
+
+    // necessities
     SDL_Event e;
     bool running = true;
-    while (running) {
-        while (SDL_PollEvent(&e)) {
+    Movement::MovementState ms;
+
+    // tick rate
+    std::chrono::time_point prev_time = std::chrono::high_resolution_clock::now();
+    double accumulator = 0.;
+
+    // frame rate
+    unsigned int frames       = 0; // generic counter
+    double       frameSeconds = 0.0;
+    unsigned int currFps      = 0;
+    uint64_t     perfFreq     = SDL_GetPerformanceFrequency();
+    uint64_t     fpsPrev      = SDL_GetPerformanceCounter();
+    char         fpsCountBuf[64];
+
+    while (running)  
+    {
+        // fps
+        uint64_t fpsNow   = SDL_GetPerformanceCounter();
+        double   delta    = double(fpsNow - fpsPrev) / double(perfFreq);
+        fpsPrev           = fpsNow;
+
+        // 2) count frames and accumulate seconds
+        frames++;
+        frameSeconds += delta;
+
+        // 3) once per second, update FPS
+        if (frameSeconds >= 1.0) {
+            currFps      = frames;
+            frames       = 0;
+            frameSeconds -= 1.0;  // subtract one second
+
+            std::snprintf(fpsCountBuf, sizeof(fpsCountBuf), "FPS: %u", currFps);
+            SDL_SetWindowTitle(window, fpsCountBuf);
+        }
+
+        // ticks
+        auto now = std::chrono::high_resolution_clock::now();
+        accumulator += std::chrono::duration<double>(now - prev_time).count();
+        prev_time = now;
+        while (SDL_PollEvent(&e)) 
+        {
             if (e.type == SDL_QUIT) running = false;
 
-            if (e.type == SDL_KEYDOWN) { // doesn't include mouse input ?
-                c.Handle(e.key.keysym.sym);
+            if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) { // doesn't include mouse input ?
+                ms.HandleInput(e.key.keysym.sym, e.type == SDL_KEYDOWN);
             }
         }
 
+        // tick for however long we need to (in case we hung for a while)
+        while (accumulator >= TICK_RATE)
+        {
+            c.Tick(TICK_RATE, ms);
+            accumulator -= TICK_RATE;
+        }
+
+        // lerp
+        double alpha = accumulator / TICK_RATE;
+
+        // lerp here
         r.Render(px, c.GetPosition());
         SDL_UpdateTexture(texture, nullptr, px, WIDTH * sizeof(uint32_t));
         SDL_RenderClear(renderer);
         SDL_RenderCopy(renderer, texture, nullptr, nullptr);
         SDL_RenderPresent(renderer);
 
-        SDL_Delay(10); 
+        //SDL_Delay(10); 
     }
+
+
+    // END MAIN LOOP
 
     delete[] px;
     SDL_DestroyTexture(texture);

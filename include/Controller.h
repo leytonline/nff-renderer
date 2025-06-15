@@ -1,5 +1,6 @@
 #include <Eigen/Dense>
-#include <SDL2/SDL.h>    
+#include <SDL2/SDL.h> 
+#include "Movement.h"   
 
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
@@ -11,6 +12,8 @@ public:
 
     // handle input from the user, calculate update new camera pos and adjust rotation axis
     void Handle(SDL_Keycode);
+    
+    void Tick(double, Movement::MovementState);
 
     // load the initial view point from the scene, define up/down rotation axis as direction pointing left of camera
     void InitializeView(const Eigen::Vector3d&, const Eigen::Vector3d&, const Eigen::Vector3d&);
@@ -24,7 +27,6 @@ private:
     void rotateDown();
     Eigen::Vector3d viewDir() const;
     Eigen::Vector3d horizontalAxis() const;
-
     Eigen::Vector3d _pos, _up, _at;
 };
 
