@@ -57,7 +57,7 @@ int main() {
     double accumulator = 0.;
 
     // frame rate
-    unsigned int frames       = 0;
+    unsigned int frames       = 0; // generic counter
     double       frameSeconds = 0.0;
     unsigned int currFps      = 0;
     uint64_t     perfFreq     = SDL_GetPerformanceFrequency();
@@ -67,23 +67,23 @@ int main() {
     while (running)  
     {
         // fps
-          uint64_t fpsNow   = SDL_GetPerformanceCounter();
-    double   delta    = double(fpsNow - fpsPrev) / double(perfFreq);
-    fpsPrev           = fpsNow;
+        uint64_t fpsNow   = SDL_GetPerformanceCounter();
+        double   delta    = double(fpsNow - fpsPrev) / double(perfFreq);
+        fpsPrev           = fpsNow;
 
-    // 2) count frames and accumulate seconds
-    frames++;
-    frameSeconds += delta;
+        // 2) count frames and accumulate seconds
+        frames++;
+        frameSeconds += delta;
 
-    // 3) once per second, update FPS
-    if (frameSeconds >= 1.0) {
-        currFps      = frames;
-        frames       = 0;
-        frameSeconds -= 1.0;  // subtract one second
+        // 3) once per second, update FPS
+        if (frameSeconds >= 1.0) {
+            currFps      = frames;
+            frames       = 0;
+            frameSeconds -= 1.0;  // subtract one second
 
-        std::snprintf(fpsCountBuf, sizeof(fpsCountBuf), "FPS: %u", currFps);
-        SDL_SetWindowTitle(window, fpsCountBuf);
-    }
+            std::snprintf(fpsCountBuf, sizeof(fpsCountBuf), "FPS: %u", currFps);
+            SDL_SetWindowTitle(window, fpsCountBuf);
+        }
 
         // ticks
         auto now = std::chrono::high_resolution_clock::now();
@@ -115,7 +115,7 @@ int main() {
         SDL_RenderCopy(renderer, texture, nullptr, nullptr);
         SDL_RenderPresent(renderer);
 
-        SDL_Delay(10); 
+        //SDL_Delay(10); 
     }
 
 
