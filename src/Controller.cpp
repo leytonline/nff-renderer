@@ -1,7 +1,7 @@
 #include "Controller.h"
 
 #define ANGLERAD(theta) theta * M_PI / 180. 
-#define ANGLE ANGLERAD(15)
+#define ANGLE ANGLERAD(1)
 
 Controller::Controller() {
     // maybe make this have more functionality? 
@@ -22,6 +22,33 @@ void Controller::Handle(SDL_Keycode input) {
         case SDLK_a:
             rotateLeft();
             break;
+    }
+}
+
+void Controller::Tick(double tr, Movement::MovementState state) {
+
+    if (state.GetState(Movement::MovementEnum::FORWARD)) {
+
+    }
+
+    if (state.GetState(Movement::MovementEnum::BACKWARD)) {
+        
+    }
+
+    if (state.GetState(Movement::MovementEnum::LEFT)) {
+        rotateLeft();
+    }
+
+    if (state.GetState(Movement::MovementEnum::RIGHT)) {
+        rotateRight();
+    }
+
+    if (state.GetState(Movement::MovementEnum::UP)) {
+        rotateUp();
+    }
+
+    if (state.GetState(Movement::MovementEnum::DOWN)) {
+        rotateDown();
     }
 }
 
