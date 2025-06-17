@@ -3,10 +3,13 @@ CXX = g++
 CXXFLAGS = -Wall -Wextra -std=c++17 -Iinclude -O2
 EIGEN = -I/usr/include/eigen3
 SDL2 = -I/usr/include/SDL2 -L/usr/local/lib -l:libSDL2.a 
-OBJS = obj/Geometry.o obj/Controller.o obj/Nff.o obj/NaiveRasterizer.o obj/Renderer.o obj/ControllerState.o
+OBJS = obj/Geometry.o obj/Controller.o obj/Nff.o obj/NaiveRasterizer.o obj/Renderer.o obj/ControllerState.o obj/Engine.o
 
 main: main.cpp $(OBJS)
 	$(CXX) $(CXXFLAGS) $(EIGEN) $(OBJS) main.cpp $(SDL2) -o main
+
+obj/Engine.o: src/Engine.cpp include/Engine.h
+	$(CXX) $(CXXFLAGS) $(EIGEN) -c src/Engine.cpp -o obj/Engine.o
 
 obj/ControllerState.o: src/ControllerState.cpp include/ControllerState.h
 	$(CXX) $(CXXFLAGS) -I/usr/include/SDL2 -c src/ControllerState.cpp -o obj/ControllerState.o

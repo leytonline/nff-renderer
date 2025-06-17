@@ -40,6 +40,8 @@ Eigen::Matrix4d NaiveRasterizer::calcM(const Eigen::Vector3d& pos, const Eigen::
     Eigen::Vector3d forward = dir * -Eigen::Vector3d::UnitZ();  
     Eigen::Vector3d right   = dir * Eigen::Vector3d::UnitX();   
     Eigen::Vector3d up      = dir * Eigen::Vector3d::UnitY();   
+    Eigen::Matrix3d view;
+    view << right, up, -forward;
 
     // calculate all of the stuff needed
     double near = -_nff->_hither;
@@ -48,7 +50,7 @@ Eigen::Matrix4d NaiveRasterizer::calcM(const Eigen::Vector3d& pos, const Eigen::
     double l = -1 * h, r = 1 * h, b = -1 * h, t = 1 * h;
 
     // all calculated as the textbook specified
-    Eigen::Matrix4d Mvp, P, Morth, Mcam;
+    Eigen::Matrix4d Mvp, P, Morth;
     P << near, 0, 0, 0, 
          0, near, 0, 0, 
          0, 0, near + far, -(far*near), 
@@ -61,8 +63,9 @@ Eigen::Matrix4d NaiveRasterizer::calcM(const Eigen::Vector3d& pos, const Eigen::
              0, 2 / (t - b), 0, 0,
              0, 0, 2 / (near - far), - (near + far) / (near - far),
              0, 0, 0, 1;
-    Mcam << right, up, -forward, pos, 0, 0, 0, 1;
-    Mcam = Mcam.inverse().eval(); 
+    Eigen::Matrix4d Mcam = Eigen::Matrix4d::Identity();
+    Mcam.block<3,3>(0,0) = view.transpose();            // rotate world into camera space
+    Mcam.block<3,1>(0,3) = -view.transpose() * pos;   
 
     return Mvp * Morth * P * Mcam;
 }
@@ -240,6 +243,11 @@ void NaiveRasterizer::raster(Triangle& t, std::vector<Fragment>* frags) {
 
                     // interpolate z value
                     double z = alpha * t._vertices[0][2] + beta * t._vertices[1][2] + gamma * t._vertices[2][2];
+
+                    if (z < 0) { 
+                        //std::cout << "negative Z: " << z << std::endl;
+                        continue;
+                    }
 
                     // add fragment to image vector
                     frags[j * _nff->_res.second + i].push_back(Fragment(color, z));
