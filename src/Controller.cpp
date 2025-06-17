@@ -22,40 +22,72 @@ void Controller::Handle(SDL_Keycode input) {
         case SDLK_a:
             rotateLeft();
             break;
+        case SDLK_LEFT:
+            yaw(ANGLE);
+            break;
+        case SDLK_RIGHT:
+            yaw(-ANGLE);
+            break;
     }
 }
 
-void Controller::Tick(double tr, Movement::MovementState state) {
+void Controller::Tick(double tr, ControllerState::MovementState state) {
 
-    if (state.GetState(Movement::MovementEnum::FORWARD)) {
+    if (state.GetState(ControllerState::MovementEnum::FORWARD)) {
 
     }
 
-    if (state.GetState(Movement::MovementEnum::BACKWARD)) {
+    if (state.GetState(ControllerState::MovementEnum::BACKWARD)) {
         
     }
 
-    if (state.GetState(Movement::MovementEnum::LEFT)) {
+    if (state.GetState(ControllerState::MovementEnum::LEFT)) {
         rotateLeft();
     }
 
-    if (state.GetState(Movement::MovementEnum::RIGHT)) {
+    if (state.GetState(ControllerState::MovementEnum::RIGHT)) {
         rotateRight();
     }
 
-    if (state.GetState(Movement::MovementEnum::UP)) {
+    if (state.GetState(ControllerState::MovementEnum::UP)) {
         rotateUp();
     }
 
-    if (state.GetState(Movement::MovementEnum::DOWN)) {
+    if (state.GetState(ControllerState::MovementEnum::DOWN)) {
         rotateDown();
     }
+
+    if (state.GetState(ControllerState::MovementEnum::Y_LEFT)) {
+        yaw(ANGLE);
+    }
+
+    if (state.GetState(ControllerState::MovementEnum::Y_RIGHT)) {
+        yaw(-ANGLE);
+    }
+
+    if (state.GetState(ControllerState::MovementEnum::P_UP)) {
+        pitch(ANGLE);
+    }
+
+    if (state.GetState(ControllerState::MovementEnum::P_DOWN)) {
+        pitch(-ANGLE);
+    }
+
 }
 
 void Controller::InitializeView(const Eigen::Vector3d& p, const Eigen::Vector3d& up, const Eigen::Vector3d& at) {
     _pos = p; // view point
     _up = up.normalized();
     _at = at;
+
+    Eigen::Vector3d initialDir = (_at - _pos).normalized();
+    Eigen::Vector3d right = initialDir.cross(_up).normalized();
+    Eigen::Vector3d pup = right.cross(initialDir);
+    Eigen::Matrix3d init;
+    init.col(0) = right;
+    init.col(1) = pup;
+    init.col(2) = -initialDir;
+    _orientation = Eigen::Quaterniond(init);
 }
 
 const Eigen::Vector3d& Controller::GetPosition() {
@@ -82,8 +114,21 @@ void Controller::rotateDown() {
     _pos = down * _pos;
 }
 
+void Controller::yaw(double rot) { 
+    Eigen::Quaterniond q(Eigen::AngleAxisd(rot, Eigen::Vector3d::UnitZ()));
+    _orientation = (q * _orientation).normalized();
+
+}
+
+void Controller::pitch(double rot) {
+    Eigen::Vector3d right = _orientation * Eigen::Vector3d::UnitX();
+    Eigen::Quaterniond q(Eigen::AngleAxisd(rot, right));
+    _orientation = (q * _orientation).normalized();
+}
+
 // Returns a non-normalized view direction
 // mostly for helping get axis to rotate up/down on, hence not normalized (so cross works nicely)
+// deprecate, not viewDir anymore but our "connection" to world center
 Eigen::Vector3d Controller::viewDir() const {
     return _at - _pos;
 }
@@ -91,4 +136,8 @@ Eigen::Vector3d Controller::viewDir() const {
 // Gets the axis to rotate up/down around on
 Eigen::Vector3d Controller::horizontalAxis() const {
     return _up.cross(viewDir()).normalized();
+}
+
+const Eigen::Quaterniond& Controller::GetOrientation() const {
+    return _orientation;
 }

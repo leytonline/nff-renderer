@@ -12,8 +12,8 @@
 class NaiveRasterizer : public Renderer {
 public:
     NaiveRasterizer();
-    void Render(uint32_t*, const Eigen::Vector3d&);
-    Eigen::Matrix4d calcM(const Eigen::Vector3d&);
+    void Render(uint32_t*, const Eigen::Vector3d&, const Eigen::Quaterniond&);
+    Eigen::Matrix4d calcM(const Eigen::Vector3d&, const Eigen::Quaterniond&);
     void processVertices(std::vector<Triangle>&, Eigen::Matrix4d m);
     void shadeTriangle(Triangle*, std::vector<Eigen::Vector3d>&);
     void rasterize(std::vector<Triangle>&, std::vector<Fragment>*);
@@ -21,7 +21,7 @@ public:
     void blend(std::vector<Fragment>*, Eigen::Vector3d*);
     void writeImage(Eigen::Vector3d*, uint32_t*);
     void processFragments(std::vector<Fragment>*);
-    void SetAxisDebug(bool);
+    //void SetAxisDebug(bool);
     void SetNff(Nff* n);
 public: // separated for vars
     Nff *_nff;
@@ -30,7 +30,7 @@ public: // separated for vars
     bool _fragmentShading;
     bool _debug;
 private:
-    void drawDebugAxes(Eigen::Vector3d*, const Eigen::Vector3d&);
+    //void drawDebugAxes(Eigen::Vector3d*, const Eigen::Vector3d&);
 
 };
 

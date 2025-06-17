@@ -3,7 +3,7 @@
 #include <SDL2/SDL.h>    
 #include "NaiveRasterizer.h"
 #include "Controller.h"
-#include "Movement.h"
+#include "ControllerState.h"
 #include <ctime>
 #include <chrono>
 
@@ -32,7 +32,7 @@ int main() {
     uint32_t *px = new uint32_t[WIDTH * HEIGHT];    
 
     Nff scene;
-    if (scene.parse("scenes/teapot-3.nff") < 0)
+    if (scene.parse("scenes/tetra-3.nff") < 0)
     {
         printf("Failed to parse nff image");
         abort();
@@ -40,7 +40,7 @@ int main() {
 
     Controller c;
     NaiveRasterizer r;
-    r.SetAxisDebug(true);
+    //r.SetAxisDebug(true);
     r.SetNff(&scene);
     c.InitializeView(scene.GetFrom(), scene.GetUp(), scene.GetAt()); // 0,0,0 at (not always ?)
 
@@ -50,7 +50,7 @@ int main() {
     // necessities
     SDL_Event e;
     bool running = true;
-    Movement::MovementState ms;
+    ControllerState::MovementState ms;
 
     // tick rate
     std::chrono::time_point prev_time = std::chrono::high_resolution_clock::now();
@@ -109,13 +109,15 @@ int main() {
         double alpha = accumulator / TICK_RATE;
 
         // lerp here
-        r.Render(px, c.GetPosition());
+        r.Render(px, c.GetPosition(), c.GetOrientation());
         SDL_UpdateTexture(texture, nullptr, px, WIDTH * sizeof(uint32_t));
         SDL_RenderClear(renderer);
         SDL_RenderCopy(renderer, texture, nullptr, nullptr);
         SDL_RenderPresent(renderer);
 
-        //SDL_Delay(10); 
+        std::cout << c.GetPosition()[0] << ' ' << c.GetPosition()[1] << ' ' << c.GetPosition()[2] << '\n';
+
+        //SDL_Delay(1); 
     }
 
 
