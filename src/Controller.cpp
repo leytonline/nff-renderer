@@ -72,6 +72,7 @@ void Controller::Tick(double tr, ControllerState::MovementState state) {
     if (state.GetState(ControllerState::MovementEnum::P_DOWN)) {
         pitch(-ANGLE);
     }
+
 }
 
 void Controller::InitializeView(const Eigen::Vector3d& p, const Eigen::Vector3d& up, const Eigen::Vector3d& at) {
@@ -115,14 +116,14 @@ void Controller::rotateDown() {
 
 void Controller::yaw(double rot) { 
     Eigen::Quaterniond q(Eigen::AngleAxisd(rot, Eigen::Vector3d::UnitZ()));
-    _orientation = q * _orientation;
+    _orientation = (q * _orientation).normalized();
 
 }
 
 void Controller::pitch(double rot) {
     Eigen::Vector3d right = _orientation * Eigen::Vector3d::UnitX();
     Eigen::Quaterniond q(Eigen::AngleAxisd(rot, right));
-    _orientation = q * _orientation;
+    _orientation = (q * _orientation).normalized();
 }
 
 // Returns a non-normalized view direction

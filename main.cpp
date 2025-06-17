@@ -32,7 +32,7 @@ int main() {
     uint32_t *px = new uint32_t[WIDTH * HEIGHT];    
 
     Nff scene;
-    if (scene.parse("scenes/teapot-3.nff") < 0)
+    if (scene.parse("scenes/tetra-3.nff") < 0)
     {
         printf("Failed to parse nff image");
         abort();
@@ -115,7 +115,9 @@ int main() {
         SDL_RenderCopy(renderer, texture, nullptr, nullptr);
         SDL_RenderPresent(renderer);
 
-        //SDL_Delay(10); 
+        std::cout << c.GetPosition()[0] << ' ' << c.GetPosition()[1] << ' ' << c.GetPosition()[2] << '\n';
+
+        //SDL_Delay(1); 
     }
 
 
