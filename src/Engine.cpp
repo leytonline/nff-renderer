@@ -26,11 +26,12 @@ int Engine::MainLoop() {
     uint32_t *px = new uint32_t[WIDTH * HEIGHT];    
 
     Nff scene;
-    if (scene.parse("scenes/teapot-3.nff") < 0)
+    if (scene.parse("scenes/test.nff") < 0)
     {
         printf("Failed to parse nff image");
         abort();
     }
+    scene.dumpLong();
 
     Controller c;
     NaiveRasterizer r;

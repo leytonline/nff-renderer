@@ -26,6 +26,8 @@ std::ostream& operator<<(std::ostream& os, const Triangle& t) {
     }
     builder << ')';
 
+    builder << t._fill._color[0] << ' ' << t._fill._color[1] << ' ' << t._fill._color[2];
+
     os << builder.str();
 
     return os;
