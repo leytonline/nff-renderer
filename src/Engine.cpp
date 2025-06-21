@@ -101,7 +101,7 @@ int Engine::MainLoop() {
         }
 
         // lerp
-        double alpha = accumulator / TICK_RATE;
+        //double alpha = accumulator / TICK_RATE;
 
         // lerp here
         r.Render(px, c.GetPosition(), c.GetOrientation());
