@@ -31,10 +31,10 @@ int Engine::MainLoop() {
         printf("Failed to parse nff image");
         abort();
     }
-    scene.dumpLong();
+    //scene.dumpLong();
 
     Controller c;
-    NaiveRasterizer r;
+    MetalRasterizer r;
     //r.SetAxisDebug(true);
     r.SetNff(&scene);
     c.InitializeView(scene.GetFrom(), scene.GetUp(), scene.GetAt()); // 0,0,0 at (not always ?)

@@ -1,7 +1,8 @@
 #include <stdio.h>                 
 #include <vector>        
 #include <SDL2/SDL.h>    
-#include "NaiveRasterizer.h"
+//#include "NaiveRasterizer.h"
+#include "MetalRasterizer.h"
 #include "Controller.h"
 #include "ControllerState.h"
 #include <ctime>
