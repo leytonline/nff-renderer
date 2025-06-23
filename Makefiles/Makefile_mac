@@ -3,10 +3,16 @@ CXX = clang++
 CXXFLAGS = -Wall -Wextra -std=c++17 -Iinclude -O2
 EIGEN = -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3
 SDL2 = -I/opt/homebrew/Cellar/sdl2/2.32.4/include/ -L/opt/homebrew/Cellar/sdl2/2.32.4/lib/ -lSDL2
-OBJS = obj/Geometry.o obj/Controller.o obj/Nff.o obj/NaiveRasterizer.o obj/Renderer.o obj/ControllerState.o obj/Engine.o
+OBJS = obj/Geometry.o obj/Controller.o obj/Nff.o obj/NaiveRasterizer.o obj/Renderer.o obj/ControllerState.o obj/Engine.o obj/MetalRasterizer.o obj/MetalLayer.o
 
 main: main.cpp $(OBJS)
-	$(CXX) $(CXXFLAGS) $(EIGEN) $(SDL2) $(OBJS) main.cpp -o main
+	$(CXX) $(CXXFLAGS) $(EIGEN) $(SDL2) $(OBJS) -framework Foundation -framework Metal main.cpp -o main
+
+obj/MetalRasterizer.o: Metal/MetalRasterizer.mm include/MetalRasterizer.h include/Renderer.h
+	$(CXX) $(CXXFLAGS) $(EIGEN) -ObjC++ -IMetal -c Metal/MetalRasterizer.mm -o obj/MetalRasterizer.o
+
+obj/MetalLayer.o: Metal/MetalLayer.mm Metal/MetalLayer.h
+	$(CXX) $(CXXFLAGS) $(EIGEN) -ObjC++ -IMetal -c Metal/MetalLayer.mm -o obj/MetalLayer.o
 
 obj/Engine.o: src/Engine.cpp include/Engine.h
 	$(CXX) $(CXXFLAGS) $(EIGEN) -I/opt/homebrew/Cellar/sdl2/2.32.4/include/ -c src/Engine.cpp -o obj/Engine.o

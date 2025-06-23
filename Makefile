@@ -12,7 +12,7 @@ obj/MetalRasterizer.o: Metal/MetalRasterizer.mm include/MetalRasterizer.h includ
 	$(CXX) $(CXXFLAGS) $(EIGEN) -ObjC++ -IMetal -c Metal/MetalRasterizer.mm -o obj/MetalRasterizer.o
 
 obj/MetalLayer.o: Metal/MetalLayer.mm Metal/MetalLayer.h
-	$(CXX) $(CXXFLAGS) -ObjC++ -IMetal -c Metal/MetalLayer.mm -o obj/MetalLayer.o
+	$(CXX) $(CXXFLAGS) $(EIGEN) -ObjC++ -IMetal -c Metal/MetalLayer.mm -o obj/MetalLayer.o
 
 obj/Engine.o: src/Engine.cpp include/Engine.h
 	$(CXX) $(CXXFLAGS) $(EIGEN) -I/opt/homebrew/Cellar/sdl2/2.32.4/include/ -c src/Engine.cpp -o obj/Engine.o
@@ -34,6 +34,10 @@ obj/NaiveRasterizer.o: src/NaiveRasterizer.cpp include/NaiveRasterizer.h obj/Nff
 
 obj/Renderer.o: src/Renderer.cpp include/Renderer.h 
 	$(CXX) $(CXXFLAGS) $(EIGEN) -c src/Renderer.cpp -o obj/Renderer.o
+
+shaders: Metal/Shader.metal 
+	xcrun -sdk macosx metal -c Metal/Shader.metal -o obj/shader.air
+	xcrun -sdk macosx metallib obj/shader.air -o obj/shader.metallib
 
 clean:
 	rm -f obj/*.o

@@ -20,10 +20,11 @@ public:
     ~MetalRasterizer();
 
     void Render(uint32_t* pixels, const Eigen::Vector3d& pos, const Eigen::Quaterniond& dir) override;
-    void SetNff(Nff* n) {_nff = n;};
+    void SetNff(Nff* n);
 
 private:
-    struct Impl;     // Forward declaration of the hidden implementation
+    int loadNff();
+    struct Impl;  
     Impl* impl;
 };
 
