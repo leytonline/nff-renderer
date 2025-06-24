@@ -85,6 +85,7 @@
 
     [encoder setRenderPipelineState:_pipelineState];
     [encoder setVertexBuffer:_verts offset:0 atIndex:0];
+    [encoder setVertexBuffer:_mvpBuffer offset:0 atIndex:1]; // <--- MVP bound
 
     [encoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:0 vertexCount:_idxCount];
     [encoder endEncoding];
@@ -111,5 +112,13 @@
 
     return 0;
 }
+
+- (void)setMVP:(const float *)mvpData {
+    if (!_mvpBuffer) {
+        _mvpBuffer = [_dev newBufferWithLength:sizeof(float) * 16 options:MTLResourceStorageModeShared];
+    }
+    memcpy([_mvpBuffer contents], mvpData, sizeof(float) * 16);
+}
+
 
 @end

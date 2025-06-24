@@ -14,6 +14,7 @@
     id <MTLBuffer> _norms;
     id <MTLBuffer> _idx;
     NSUInteger _idxCount;
+    id<MTLBuffer> _mvpBuffer;
 }
 - (void)Render:(uint32_t*)pixels
            pos:(const float*)pos
@@ -21,4 +22,6 @@
 - (int)primeBuffers:(const float*) verts
             len:(NSUInteger)len
             vcount:(uint32_t)vcount;
+- (void)setMVP:(const float *)mvpData;
+
 @end
