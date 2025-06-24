@@ -35,6 +35,10 @@ obj/NaiveRasterizer.o: src/NaiveRasterizer.cpp include/NaiveRasterizer.h obj/Nff
 obj/Renderer.o: src/Renderer.cpp include/Renderer.h 
 	$(CXX) $(CXXFLAGS) $(EIGEN) -c src/Renderer.cpp -o obj/Renderer.o
 
+shaders: Metal/Shader.metal 
+	xcrun -sdk macosx metal -c Metal/Shader.metal -o obj/shader.air
+	xcrun -sdk macosx metallib obj/shader.air -o obj/shader.metallib
+
 clean:
 	rm -f obj/*.o
 	rm -f main
