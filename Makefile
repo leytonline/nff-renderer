@@ -1,7 +1,7 @@
 # Compiler
 CXX = clang++
 CXXFLAGS = -Wall -Wextra -std=c++17 -Iinclude -O2
-EIGEN = -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3
+EIGEN = -I/opt/homebrew/Cellar/eigen/5.0.1/include/eigen3
 SDL2 = -I/opt/homebrew/Cellar/sdl2/2.32.4/include/ -L/opt/homebrew/Cellar/sdl2/2.32.4/lib/ -lSDL2
 OBJS = obj/Geometry.o obj/Controller.o obj/Nff.o obj/NaiveRasterizer.o obj/Renderer.o obj/ControllerState.o obj/Engine.o obj/MetalRasterizer.o obj/MetalLayer.o
 

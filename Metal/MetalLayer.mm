@@ -60,8 +60,8 @@
            pos:(const float*)pos
            dir:(const float*)quat {
 
-    const NSUInteger width = 512;
-    const NSUInteger height = 512;
+    const NSUInteger width = 1024;
+    const NSUInteger height = 1024;
 
     MTLTextureDescriptor* texDesc = [
         MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatBGRA8Unorm

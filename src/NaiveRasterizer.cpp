@@ -215,7 +215,7 @@ void NaiveRasterizer::raster(Triangle& t, std::vector<Fragment>* frags) {
     bxMin = std::max(0, bxMin);
     bxMax = std::min(_nff->_res.first, bxMax);
     byMin = std::max(0, byMin);
-    byMax = std::min(_nff->_res.first, byMax);
+    byMax = std::min(_nff->_res.second, byMax);
 
     double fa = f12(t._vertices[0][0], t._vertices[0][1], t);
     double fb = f20(t._vertices[1][0], t._vertices[1][1], t);
