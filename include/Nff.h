@@ -37,7 +37,7 @@ public:
         return _up;
     }
     Eigen::Vector3d GetAt() const {
-        return _up;
+        return _at;
     }
 };
 

@@ -1,5 +1,47 @@
 #include "NaiveRasterizer.h"
 #include <cmath>
+#include <limits>
+
+namespace {
+struct ClipVertex {
+    Eigen::Vector4d clip;
+    Eigen::Vector3d color;
+    Eigen::Vector3d world;
+    Eigen::Vector3d normal;
+};
+
+using Plane = Eigen::Vector4d;
+
+std::vector<ClipVertex> clipPolygon(const std::vector<ClipVertex>& input, const Plane& plane) {
+    std::vector<ClipVertex> output;
+    if (input.empty()) return output;
+
+    auto distance = [&](const ClipVertex& v) { return plane.dot(v.clip); };
+    ClipVertex previous = input.back();
+    double previousDistance = distance(previous);
+
+    for (const ClipVertex& current : input) {
+        const double currentDistance = distance(current);
+        const bool previousInside = previousDistance >= 0.0;
+        const bool currentInside = currentDistance >= 0.0;
+
+        if (previousInside != currentInside) {
+            const double t = previousDistance / (previousDistance - currentDistance);
+            output.push_back({
+                previous.clip + t * (current.clip - previous.clip),
+                previous.color + t * (current.color - previous.color),
+                previous.world + t * (current.world - previous.world),
+                previous.normal + t * (current.normal - previous.normal)
+            });
+        }
+        if (currentInside) output.push_back(current);
+
+        previous = current;
+        previousDistance = currentDistance;
+    }
+    return output;
+}
+}
 
 NaiveRasterizer::NaiveRasterizer() {
     _transparent = false;
@@ -44,30 +86,23 @@ Eigen::Matrix4d NaiveRasterizer::calcM(const Eigen::Vector3d& pos, const Eigen::
     view << right, up, -forward;
 
     // calculate all of the stuff needed
-    double near = -_nff->_hither;
-    double far = 1000 * near;
-    double h = tan(_nff->_angle / 2 * M_PI / 180);
-    double l = -1 * h, r = 1 * h, b = -1 * h, t = 1 * h;
+    const double near = std::max(_nff->_hither, 1e-6);
+    const double far = 1000.0 * near;
+    const double f = 1.0 / tan(_nff->_angle * M_PI / 360.0);
 
-    // all calculated as the textbook specified
-    Eigen::Matrix4d Mvp, P, Morth;
-    P << near, 0, 0, 0, 
-         0, near, 0, 0, 
-         0, 0, near + far, -(far*near), 
-         0, 0, 1, 0;
-    Mvp << _nff->_res.first / 2, 0, 0, (double) (_nff->_res.first - 1) / 2, 
-           0, -_nff->_res.second / 2, 0, (double) (_nff->_res.second - 1) / 2,
-           0, 0, 1, 0,
-           0, 0, 0, 1;
-    Morth << 2 / (r - l), 0, 0, 0,
-             0, 2 / (t - b), 0, 0,
-             0, 0, 2 / (near - far), - (near + far) / (near - far),
-             0, 0, 0, 1;
+    // Right-handed OpenGL-style clip coordinates. Clipping must happen before
+    // the perspective divide; the viewport transform is applied in raster().
+    Eigen::Matrix4d projection = Eigen::Matrix4d::Zero();
+    projection(0, 0) = f;
+    projection(1, 1) = f;
+    projection(2, 2) = (far + near) / (near - far);
+    projection(2, 3) = (2.0 * far * near) / (near - far);
+    projection(3, 2) = -1.0;
     Eigen::Matrix4d Mcam = Eigen::Matrix4d::Identity();
     Mcam.block<3,3>(0,0) = view.transpose();            // rotate world into camera space
     Mcam.block<3,1>(0,3) = -view.transpose() * pos;   
 
-    return Mvp * Morth * P * Mcam;
+    return projection * Mcam;
 }
 
 // transform and shade vertices, placing them in transforms vector
@@ -76,36 +111,48 @@ void NaiveRasterizer::processVertices(std::vector<Triangle>& transforms, Eigen::
     for (unsigned i = 0; i < _nff->_surfaces.size(); i++)
     {
         Triangle& tri = *_nff->_surfaces[i];
-        std::vector<Eigen::Vector3d> verts;
-        std::vector<double> divs;
+        std::vector<Eigen::Vector3d> shades;
+        shadeTriangle(&tri, shades);
+        std::vector<ClipVertex> polygon;
 
         for (int j = 0; j < 3; j++)
         {
             Eigen::Vector4d homogenized;
             homogenized << tri._vertices[j], 1;
-            Eigen::Vector4d result = m * homogenized;
-            verts.push_back(Eigen::Vector3d(result[0], result[1], result[2]));
-            divs.push_back(result[3]);
+            const Eigen::Vector3d normal = tri._patch
+                ? static_cast<Tripatch*>(&tri)->_norms[j]
+                : (tri._vertices[0] - tri._vertices[1]).cross(tri._vertices[0] - tri._vertices[2]).normalized();
+            polygon.push_back({m * homogenized, shades[j], tri._vertices[j], normal});
         }
 
-        // create the new triangle with the transformed points and some default fill since it won't get used.
-        Triangle transformed(verts, tri._fill);
-
-        if (tri._patch) 
-        {
-            transformed._patch = true;
-            transformed._origNorms = static_cast<Tripatch*>(&tri)->_norms;
+        // Canonical clip volume: -w <= x,y,z <= w.
+        const Plane planes[] = {
+            Plane( 1, 0, 0, 1), Plane(-1, 0, 0, 1),
+            Plane( 0, 1, 0, 1), Plane( 0,-1, 0, 1),
+            Plane( 0, 0, 1, 1), Plane( 0, 0,-1, 1)
         };
+        for (const Plane& plane : planes) polygon = clipPolygon(polygon, plane);
 
-        // might needs these for fragment shading
-        transformed._origVerts = tri._vertices;
-
-        // store the homogenous divide parallel to it's vertex in _divs
-        transformed._divs = divs;
-
-        // apply vertex shading
-        shadeTriangle(&tri, transformed._shades);
-        transforms.push_back(transformed);
+        // Clipping can create a polygon; triangulate it as a fan.
+        for (size_t j = 1; j + 1 < polygon.size(); ++j) {
+            const ClipVertex clipped[] = {polygon[0], polygon[j], polygon[j + 1]};
+            std::vector<Eigen::Vector3d> verts, colors, worlds, normals;
+            std::vector<double> divs;
+            for (const ClipVertex& vertex : clipped) {
+                verts.push_back(vertex.clip.head<3>());
+                divs.push_back(vertex.clip.w());
+                colors.push_back(vertex.color);
+                worlds.push_back(vertex.world);
+                normals.push_back(vertex.normal);
+            }
+            Triangle transformed(verts, tri._fill);
+            transformed._patch = tri._patch;
+            transformed._divs = divs;
+            transformed._shades = colors;
+            transformed._origVerts = worlds;
+            transformed._origNorms = normals;
+            transforms.push_back(transformed);
+        }
     }
 
 }
@@ -197,9 +244,10 @@ void NaiveRasterizer::raster(Triangle& t, std::vector<Fragment>* frags) {
     // homogenous divide
     for (int i = 0; i < 3; i++)
     {
-        // divide each x,y leaving it Z unchanged
-        t._vertices[i][0] /= t._divs[i];
-        t._vertices[i][1] /= t._divs[i];
+        const double inverseW = 1.0 / t._divs[i];
+        t._vertices[i] *= inverseW;
+        t._vertices[i][0] = (t._vertices[i][0] + 1.0) * 0.5 * _nff->_res.first;
+        t._vertices[i][1] = (1.0 - t._vertices[i][1]) * 0.5 * _nff->_res.second;
     }
 
     // calculate bounding box
@@ -221,6 +269,11 @@ void NaiveRasterizer::raster(Triangle& t, std::vector<Fragment>* frags) {
     double fb = f20(t._vertices[1][0], t._vertices[1][1], t);
     double fg = f01(t._vertices[2][0], t._vertices[2][1], t);
 
+    if (!std::isfinite(fa) || !std::isfinite(fb) || !std::isfinite(fg) ||
+        std::abs(fa) < std::numeric_limits<double>::epsilon() ||
+        std::abs(fb) < std::numeric_limits<double>::epsilon() ||
+        std::abs(fg) < std::numeric_limits<double>::epsilon()) return;
+
     for (int j = byMin; j < byMax; j++)
     {
         for (int i = bxMin; i < bxMax; i++)
@@ -238,33 +291,32 @@ void NaiveRasterizer::raster(Triangle& t, std::vector<Fragment>* frags) {
                     && (beta > 0 || fb * f20(-1, -1, t) > 0) 
                     && (gamma > 0 || fg * f01(-1, -1, t) > 0))
                 {
-                    // calculate the color
-                    Eigen::Vector3d color = t._shades[0] + beta * (t._shades[1] - t._shades[0]) + gamma * (t._shades[2] - t._shades[0]);
+                    // Perspective-correct interpolation for vertex attributes.
+                    const double denominator = alpha / t._divs[0] + beta / t._divs[1] + gamma / t._divs[2];
+                    if (std::abs(denominator) < std::numeric_limits<double>::epsilon()) continue;
+                    const double pa = (alpha / t._divs[0]) / denominator;
+                    const double pb = (beta / t._divs[1]) / denominator;
+                    const double pg = (gamma / t._divs[2]) / denominator;
+                    Eigen::Vector3d color = pa * t._shades[0] + pb * t._shades[1] + pg * t._shades[2];
 
                     // interpolate z value
                     double z = alpha * t._vertices[0][2] + beta * t._vertices[1][2] + gamma * t._vertices[2][2];
 
-                    if (z < 0) { 
-                        //std::cout << "negative Z: " << z << std::endl;
-                        continue;
-                    }
+                    if (z < -1.0 || z > 1.0) continue;
 
                     // add fragment to image vector
-                    frags[j * _nff->_res.second + i].push_back(Fragment(color, z));
+                    const size_t fragmentIndex = static_cast<size_t>(j) * _nff->_res.first + i;
+                    frags[fragmentIndex].push_back(Fragment(color, z));
 
                     // add attributes to fragments if fragment processing
                     if (_fragmentShading && t._patch)
                     {
-                        Tripatch* tri = static_cast<Tripatch*>(&t);
-                        frags[j * _nff->_res.second + i].back()._attrNormal = tri->_origNorms[0] + 
-                            beta * (tri->_origNorms[1] - tri->_origNorms[0]) + 
-                            gamma * (tri->_origNorms[2] - tri->_origNorms[0]);
-                        frags[j * _nff->_res.second + i].back()._attrNormal.normalize();
-                        frags[j * _nff->_res.second + i].back()._attrFill = t._fill;
-                        frags[j * _nff->_res.second + i].back()._isFragShaded = true;
-                        frags[j * _nff->_res.second + i].back()._attrPos = tri->_origVerts[0] + 
-                            beta * (tri->_origVerts[1] - tri->_origVerts[0]) + 
-                            gamma * (tri->_origVerts[2] - tri->_origVerts[0]);
+                        Fragment& fragment = frags[fragmentIndex].back();
+                        fragment._attrNormal = pa * t._origNorms[0] + pb * t._origNorms[1] + pg * t._origNorms[2];
+                        fragment._attrNormal.normalize();
+                        fragment._attrFill = t._fill;
+                        fragment._isFragShaded = true;
+                        fragment._attrPos = pa * t._origVerts[0] + pb * t._origVerts[1] + pg * t._origVerts[2];
                     }
                 }
             }
