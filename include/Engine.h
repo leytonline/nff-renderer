@@ -7,8 +7,8 @@
 #include <ctime>
 #include <chrono>
 
-#define HEIGHT 512
-#define WIDTH 512
+#define HEIGHT 1024
+#define WIDTH 1024
 
 const double TICK_RATE = 1. / 128.;
 const double MAX_DT = 0.25;  

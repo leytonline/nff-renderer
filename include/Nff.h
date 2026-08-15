@@ -2,7 +2,7 @@
 #include <string>
 #include <fstream>
 #include <iostream>
-#include "Eigen/Dense"
+#include <Eigen/Dense>
 #include "Geometry.h"
 
 #ifndef NFF_H
