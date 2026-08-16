@@ -5,8 +5,7 @@ struct VertexIn {
     float3 position [[attribute(0)]];
 };
 
-vertex float4 vertex_main(VertexIn in [[stage_in]],
-                          constant float4x4& mvp [[buffer(1)]]) {
+vertex float4 vertex_main(VertexIn in [[stage_in]], constant float4x4& mvp [[buffer(1)]]) {
     return mvp * float4(in.position, 1.0);
 }
 
