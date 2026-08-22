@@ -78,6 +78,9 @@ int MetalRasterizer::loadNff() {
             verts.push_back((float)(*itr)->_vertices[i].x());
             verts.push_back((float)(*itr)->_vertices[i].y());
             verts.push_back((float)(*itr)->_vertices[i].z());
+            verts.push_back((float)(*itr)->_fill._color.x());
+            verts.push_back((float)(*itr)->_fill._color.y());
+            verts.push_back((float)(*itr)->_fill._color.z());
         }
     }
 
@@ -87,7 +90,7 @@ int MetalRasterizer::loadNff() {
 
     [impl->metal primeBuffers:verts.data()
                      len:verts.size() * sizeof(float)
-                  vcount:verts.size() / 3];
+                  vcount:verts.size() / 6];
 
     return 0;
 }

@@ -37,7 +37,11 @@
         vertexDesc.attributes[0].offset = 0;
         vertexDesc.attributes[0].bufferIndex = 0;
 
-        vertexDesc.layouts[0].stride = sizeof(float) * 3;            // 12 bytes per vertex
+        vertexDesc.attributes[1].format = MTLVertexFormatFloat3;     // color: float3
+        vertexDesc.attributes[1].offset = sizeof(float) * 3;
+        vertexDesc.attributes[1].bufferIndex = 0;
+
+        vertexDesc.layouts[0].stride = sizeof(float) * 6;
         vertexDesc.layouts[0].stepFunction = MTLVertexStepFunctionPerVertex;
 
         // 5. Create pipeline descriptor

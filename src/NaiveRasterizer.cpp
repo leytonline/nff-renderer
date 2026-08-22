@@ -56,13 +56,13 @@ void NaiveRasterizer::Render(uint32_t* pixels, const Eigen::Vector3d& pos, const
 
     // vertex processing -> transform geometry and shade vertices
     std::vector<Triangle> transformedGeos;
-    processVertices(transformedGeos, m);
+    processVertices(transformedGeos, pos, m);
 
     // rasterize -> generate fragments based on transformed geometry
     std::vector<Fragment>* fragments = new std::vector<Fragment>[_nff->_res.first * _nff->_res.second]();
     rasterize(transformedGeos, fragments);
 
-    if (_fragmentShading) processFragments(fragments);
+    if (_fragmentShading) processFragments(pos, fragments);
 
     // blending
     Eigen::Vector3d* image = new Eigen::Vector3d[_nff->_res.first * _nff->_res.second]();
@@ -106,13 +106,13 @@ Eigen::Matrix4d NaiveRasterizer::calcM(const Eigen::Vector3d& pos, const Eigen::
 }
 
 // transform and shade vertices, placing them in transforms vector
-void NaiveRasterizer::processVertices(std::vector<Triangle>& transforms, Eigen::Matrix4d m) {
+void NaiveRasterizer::processVertices(std::vector<Triangle>& transforms, const Eigen::Vector3d& pos, Eigen::Matrix4d m) {
 
     for (unsigned i = 0; i < _nff->_surfaces.size(); i++)
     {
         Triangle& tri = *_nff->_surfaces[i];
         std::vector<Eigen::Vector3d> shades;
-        shadeTriangle(&tri, shades);
+        shadeTriangle(pos, &tri, shades);
         std::vector<ClipVertex> polygon;
 
         for (int j = 0; j < 3; j++)
@@ -159,7 +159,7 @@ void NaiveRasterizer::processVertices(std::vector<Triangle>& transforms, Eigen::
 
 // given some vertex, shade it. Assumes world coordinates for V
 // wil put the shaded triangle in the referenced vector
-void NaiveRasterizer::shadeTriangle(Triangle* t, std::vector<Eigen::Vector3d>& c) {
+void NaiveRasterizer::shadeTriangle(const Eigen::Vector3d& pos, Triangle* t, std::vector<Eigen::Vector3d>& c) {
 
     double intensity = 1 / sqrt(_nff->_lights.size());
     Fill& f = t->_fill;
@@ -188,7 +188,7 @@ void NaiveRasterizer::shadeTriangle(Triangle* t, std::vector<Eigen::Vector3d>& c
         for (unsigned j = 0; j < _nff->_lights.size(); j++)
         {
             Light& light = _nff->_lights[j];
-            Eigen::Vector3d viewDir = _nff->_from - vert;
+            Eigen::Vector3d viewDir = pos - vert;
             Eigen::Vector3d lightDir = light._coords - vert;
             viewDir.normalize(); 
             lightDir.normalize();
@@ -207,7 +207,6 @@ void NaiveRasterizer::shadeTriangle(Triangle* t, std::vector<Eigen::Vector3d>& c
 
 // calculate bounding boxes and generate fragments
 void NaiveRasterizer::rasterize(std::vector<Triangle>& tris, std::vector<Fragment>* frags) {
-
     for (unsigned i = 0; i < tris.size(); i++)
     {
         // do this per triangle just to avoid a ton of nesting
@@ -369,7 +368,7 @@ void NaiveRasterizer::writeImage(Eigen::Vector3d* im, uint32_t* pixels) {
     }
 }
 
-void NaiveRasterizer::processFragments(std::vector<Fragment>* f) {
+void NaiveRasterizer::processFragments(const Eigen::Vector3d& pos, std::vector<Fragment>* f) {
 
     double intensity = 1 / sqrt(_nff->_lights.size());
 
@@ -384,7 +383,7 @@ void NaiveRasterizer::processFragments(std::vector<Fragment>* f) {
             for (unsigned k = 0; k < _nff->_lights.size(); k++)
             {
                 Light& light = _nff->_lights[k];
-                Eigen::Vector3d viewDir = _nff->_from - frag._attrPos;
+                Eigen::Vector3d viewDir = pos - frag._attrPos;
                 Eigen::Vector3d lightDir = light._coords - frag._attrPos;
                 viewDir.normalize(); 
                 lightDir.normalize();

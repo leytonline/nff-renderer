@@ -1,5 +1,6 @@
 #include <Eigen/Dense>
 #include <SDL2/SDL.h> 
+#include <numbers>
 #include "ControllerState.h"   
 
 #ifndef CONTROLLER_H
@@ -30,6 +31,8 @@ private:
     void rotateDown();
     void yaw(double);
     void pitch(double);
+    void moveForward();
+    void moveBackward();
     Eigen::Vector3d viewDir() const;
     Eigen::Vector3d horizontalAxis() const;
     Eigen::Vector3d _pos, _up, _at; // world 
