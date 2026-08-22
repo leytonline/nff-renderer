@@ -12,7 +12,7 @@ public:
     ~Controller() {} // trivial
 
     // handle input from the user, calculate update new camera pos and adjust rotation axis
-    void Handle(SDL_Keycode);
+    void HandleMouse(SDL_MouseMotionEvent);
     
     void Tick(double, ControllerState::MovementState);
 

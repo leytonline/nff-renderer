@@ -6,28 +6,11 @@ Controller::Controller() {
     // maybe make this have more functionality? 
 }
 
-void Controller::Handle(SDL_Keycode input) {
-    switch (input)
-    {
-        case SDLK_w:
-            rotateUp();
-            break;
-        case SDLK_s:
-            rotateDown();
-            break;
-         case SDLK_d:
-            rotateRight();
-            break;
-        case SDLK_a:
-            rotateLeft();
-            break;
-        case SDLK_LEFT:
-            yaw(ANGLE);
-            break;
-        case SDLK_RIGHT:
-            yaw(-ANGLE);
-            break;
-    }
+void Controller::HandleMouse(SDL_MouseMotionEvent mme) {
+    double sens = 0.001;
+
+    yaw(-mme.xrel * sens);
+    pitch(-mme.yrel * sens);
 }
 
 void Controller::Tick(double tr, ControllerState::MovementState state) {
@@ -132,7 +115,6 @@ void Controller::moveForward() {
 void Controller::moveBackward() {
     _pos -= 0.01 * (_at - _pos);
 }
-
 
 // Returns a non-normalized view direction
 // mostly for helping get axis to rotate up/down on, hence not normalized (so cross works nicely)
