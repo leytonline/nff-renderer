@@ -1,7 +1,6 @@
 #include "Controller.h"
 
-#define ANGLERAD(theta) theta * M_PI / 180. 
-#define ANGLE ANGLERAD(1)
+constexpr double ANGLE = std::numbers::pi_v<double> / 180.;
 
 Controller::Controller() {
     // maybe make this have more functionality? 
@@ -16,7 +15,7 @@ void Controller::Handle(SDL_Keycode input) {
         case SDLK_s:
             rotateDown();
             break;
-        case SDLK_d:
+         case SDLK_d:
             rotateRight();
             break;
         case SDLK_a:
@@ -34,11 +33,11 @@ void Controller::Handle(SDL_Keycode input) {
 void Controller::Tick(double tr, ControllerState::MovementState state) {
 
     if (state.GetState(ControllerState::MovementEnum::FORWARD)) {
-
+        moveForward();
     }
 
     if (state.GetState(ControllerState::MovementEnum::BACKWARD)) {
-        
+        moveBackward();
     }
 
     if (state.GetState(ControllerState::MovementEnum::LEFT)) {
@@ -125,6 +124,15 @@ void Controller::pitch(double rot) {
     Eigen::Quaterniond q(Eigen::AngleAxisd(rot, right));
     _orientation = (q * _orientation).normalized();
 }
+
+void Controller::moveForward() {
+    _pos += 0.01 * (_at - _pos);
+}
+
+void Controller::moveBackward() {
+    _pos -= 0.01 * (_at - _pos);
+}
+
 
 // Returns a non-normalized view direction
 // mostly for helping get axis to rotate up/down on, hence not normalized (so cross works nicely)
