@@ -36,7 +36,7 @@ int Engine::MainLoop() {
     //scene.dumpLong();
 
     Controller c;
-    NaiveRasterizer r;
+    MetalRasterizer r;
     //r.SetAxisDebug(true);
     r.SetNff(&scene);
     c.InitializeView(scene.GetFrom(), scene.GetUp(), scene.GetAt()); // 0,0,0 at (not always ?)
@@ -105,6 +105,11 @@ int Engine::MainLoop() {
                     break;
                 case SDL_MOUSEMOTION:
                     if (SDL_GetRelativeMouseMode()) c.HandleMouse(e.motion);
+                    break;
+                case SDL_MOUSEBUTTONDOWN:
+                    if (e.button.button == SDL_BUTTON_LEFT) {
+                        SDL_SetRelativeMouseMode(SDL_TRUE);
+                    }
                     break;
             }
         }

@@ -31,11 +31,16 @@ private:
     void rotateDown();
     void yaw(double);
     void pitch(double);
-    void moveForward();
-    void moveBackward();
+    void moveForward(double factor);
+    void moveBackward(double factor);
+    void moveLeft(double factor);
+    void moveRight(double factor);
+    void moveUp(double factor);
+    void moveDown(double factor);
     Eigen::Vector3d viewDir() const;
     Eigen::Vector3d horizontalAxis() const;
-    Eigen::Vector3d _pos, _up, _at; // world 
+    double intendedDistance() const;
+    Eigen::Vector3d _pos, _up, _at, _initialAt, _initialPos; // world 
     Eigen::Quaterniond _orientation;
 };
 

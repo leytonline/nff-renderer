@@ -36,8 +36,9 @@ static Matrix4f makeMVP(const Vector3d& pos, const Quaterniond& q) {
     float f = 1.0f / tan(fov * 0.5f * M_PI / 180.0f);
     proj(0,0) = f / aspect;
     proj(1,1) = f;
-    proj(2,2) = (far + near) / (near - far);
-    proj(2,3) = (2.0f * far * near) / (near - far);
+    // Metal's normalized device-coordinate depth range is [0, 1].
+    proj(2,2) = far / (near - far);
+    proj(2,3) = (far * near) / (near - far);
     proj(3,2) = -1.0f;
     proj(3,3) = 0.0f;
 

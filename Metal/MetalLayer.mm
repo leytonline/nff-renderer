@@ -50,12 +50,19 @@
         desc.fragmentFunction = fragFunc;
         desc.vertexDescriptor = vertexDesc;
         desc.colorAttachments[0].pixelFormat = MTLPixelFormatBGRA8Unorm;
+        desc.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
 
         _pipelineState = [_dev newRenderPipelineStateWithDescriptor:desc error:&err];
         if (!_pipelineState) {
             NSLog(@"Failed to create render pipeline state: %@", err.localizedDescription);
             return nil;
         }
+
+        MTLDepthStencilDescriptor* depthDesc = [[MTLDepthStencilDescriptor alloc] init];
+        depthDesc.depthCompareFunction = MTLCompareFunctionLess;
+        depthDesc.depthWriteEnabled = YES;
+        _depthState = [_dev newDepthStencilStateWithDescriptor:depthDesc];
+        [depthDesc release];
     }
     return self;
 }
@@ -78,16 +85,31 @@
 
     id<MTLTexture> targetTex = [_dev newTextureWithDescriptor:texDesc];
 
+    MTLTextureDescriptor* depthTexDesc = [
+        MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatDepth32Float
+        width:width
+        height:height
+        mipmapped:NO
+    ];
+    depthTexDesc.usage = MTLTextureUsageRenderTarget;
+    depthTexDesc.storageMode = MTLStorageModePrivate;
+    id<MTLTexture> depthTex = [_dev newTextureWithDescriptor:depthTexDesc];
+
     MTLRenderPassDescriptor* rpDesc = [MTLRenderPassDescriptor renderPassDescriptor];
     rpDesc.colorAttachments[0].texture = targetTex;
     rpDesc.colorAttachments[0].loadAction = MTLLoadActionClear;
     rpDesc.colorAttachments[0].clearColor = MTLClearColorMake(0.2, 0.2, 0.2, 1.0);
     rpDesc.colorAttachments[0].storeAction = MTLStoreActionStore;
+    rpDesc.depthAttachment.texture = depthTex;
+    rpDesc.depthAttachment.loadAction = MTLLoadActionClear;
+    rpDesc.depthAttachment.storeAction = MTLStoreActionDontCare;
+    rpDesc.depthAttachment.clearDepth = 1.0;
 
     id<MTLCommandBuffer> cmdBuf = [_cq commandBuffer];
     id<MTLRenderCommandEncoder> encoder = [cmdBuf renderCommandEncoderWithDescriptor:rpDesc];
 
     [encoder setRenderPipelineState:_pipelineState];
+    [encoder setDepthStencilState:_depthState];
     [encoder setVertexBuffer:_verts offset:0 atIndex:0];
     [encoder setVertexBuffer:_mvpBuffer offset:0 atIndex:1]; // <--- MVP bound
 
@@ -106,6 +128,8 @@
 
     memcpy(pixels, temp, width * height * 4);
     delete[] temp;
+    [depthTex release];
+    [targetTex release];
 }
 - (int)primeBuffers:(const float*) verts
             len:(NSUInteger)len

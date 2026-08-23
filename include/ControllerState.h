@@ -7,7 +7,7 @@
 
 namespace ControllerState {
 
-    enum MovementEnum{NONE, FORWARD, BACKWARD, LEFT, RIGHT, UP, DOWN, Y_LEFT, Y_RIGHT, P_UP, P_DOWN};
+    enum MovementEnum{NONE, FORWARD, BACKWARD, LEFT, RIGHT, UP, DOWN, Y_LEFT, Y_RIGHT, P_UP, P_DOWN, FAST, SLOW};
 
     // binary movements and looking (arrowkey yaw/pitch)
     class MovementState {
