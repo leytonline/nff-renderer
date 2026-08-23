@@ -33,9 +33,6 @@ void MovementState::HandleInput(SDL_Keycode input, bool isDown) {
         case SDLK_SPACE:
             toApply = UP;
             break;
-        case SDLK_LCTRL:
-            toApply = DOWN;
-            break;
         case SDLK_RIGHT:
             toApply = Y_RIGHT;
             break;
@@ -46,7 +43,15 @@ void MovementState::HandleInput(SDL_Keycode input, bool isDown) {
             toApply = P_UP;
             break;
         case SDLK_DOWN:
-            toApply = P_DOWN;
+            toApply = DOWN;
+            break;
+        case SDLK_LSHIFT:
+        case SDLK_RSHIFT:
+            toApply = FAST;
+            break;
+        case SDLK_LCTRL:
+        case SDLK_RCTRL:
+            toApply = SLOW;
             break;
 
     }

@@ -17,6 +17,8 @@ int Engine::MainLoop() {
     SDL_Window* window = SDL_CreateWindow("graphics",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, 0);
 
+    SDL_SetRelativeMouseMode(SDL_TRUE);
+
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
     SDL_Texture* texture = SDL_CreateTexture(renderer,
         SDL_PIXELFORMAT_RGB888,
@@ -34,7 +36,7 @@ int Engine::MainLoop() {
     //scene.dumpLong();
 
     Controller c;
-    NaiveRasterizer r;
+    MetalRasterizer r;
     //r.SetAxisDebug(true);
     r.SetNff(&scene);
     c.InitializeView(scene.GetFrom(), scene.GetUp(), scene.GetAt()); // 0,0,0 at (not always ?)
@@ -86,10 +88,29 @@ int Engine::MainLoop() {
         prev_time = now;
         while (SDL_PollEvent(&e)) 
         {
-            if (e.type == SDL_QUIT) running = false;
+            switch (e.type) {
+                case SDL_QUIT:
+                    running = false;
+                    break;
+                case SDL_KEYDOWN:
+                    if (e.key.keysym.sym == SDLK_ESCAPE)
+                    {
+                        SDL_SetRelativeMouseMode( 
+                            SDL_GetRelativeMouseMode() ? SDL_FALSE : SDL_TRUE
+                        );
+                    }
 
-            if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) { // doesn't include mouse input ?
-                ms.HandleInput(e.key.keysym.sym, e.type == SDL_KEYDOWN);
+                case SDL_KEYUP:
+                    ms.HandleInput(e.key.keysym.sym, e.type == SDL_KEYDOWN);
+                    break;
+                case SDL_MOUSEMOTION:
+                    if (SDL_GetRelativeMouseMode()) c.HandleMouse(e.motion);
+                    break;
+                case SDL_MOUSEBUTTONDOWN:
+                    if (e.button.button == SDL_BUTTON_LEFT) {
+                        SDL_SetRelativeMouseMode(SDL_TRUE);
+                    }
+                    break;
             }
         }
 
@@ -101,7 +122,7 @@ int Engine::MainLoop() {
         }
 
         // lerp
-        //double alpha = accumulator / TICK_RATE;
+        // double alpha = accumulator / TICK_RATE;
 
         // lerp here
         r.Render(px, c.GetPosition(), c.GetOrientation());

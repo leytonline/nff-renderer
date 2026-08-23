@@ -6,54 +6,49 @@ Controller::Controller() {
     // maybe make this have more functionality? 
 }
 
-void Controller::Handle(SDL_Keycode input) {
-    switch (input)
-    {
-        case SDLK_w:
-            rotateUp();
-            break;
-        case SDLK_s:
-            rotateDown();
-            break;
-         case SDLK_d:
-            rotateRight();
-            break;
-        case SDLK_a:
-            rotateLeft();
-            break;
-        case SDLK_LEFT:
-            yaw(ANGLE);
-            break;
-        case SDLK_RIGHT:
-            yaw(-ANGLE);
-            break;
-    }
+void Controller::HandleMouse(SDL_MouseMotionEvent mme) {
+    double sens = 0.002;
+
+    yaw(-mme.xrel * sens);
+    pitch(-mme.yrel * sens);
 }
 
 void Controller::Tick(double tr, ControllerState::MovementState state) {
 
+    double multiplier = 1;
+    if (state.GetState(ControllerState::MovementEnum::FAST)) {
+        multiplier *= 2;
+    }
+    if (state.GetState(ControllerState::MovementEnum::SLOW)) {
+        multiplier *= 0.5;
+    }
+
     if (state.GetState(ControllerState::MovementEnum::FORWARD)) {
-        moveForward();
+        moveForward(multiplier);
     }
 
     if (state.GetState(ControllerState::MovementEnum::BACKWARD)) {
-        moveBackward();
+        moveBackward(multiplier);
     }
 
     if (state.GetState(ControllerState::MovementEnum::LEFT)) {
-        rotateLeft();
+        //rotateLeft();
+        moveLeft(multiplier);
     }
 
     if (state.GetState(ControllerState::MovementEnum::RIGHT)) {
-        rotateRight();
+        //rotateRight();
+        moveRight(multiplier);
     }
 
     if (state.GetState(ControllerState::MovementEnum::UP)) {
-        rotateUp();
+        // rotateUp();
+        moveUp(multiplier);
     }
 
     if (state.GetState(ControllerState::MovementEnum::DOWN)) {
-        rotateDown();
+        // rotateDown();
+        moveDown(multiplier);
     }
 
     if (state.GetState(ControllerState::MovementEnum::Y_LEFT)) {
@@ -75,9 +70,10 @@ void Controller::Tick(double tr, ControllerState::MovementState state) {
 }
 
 void Controller::InitializeView(const Eigen::Vector3d& p, const Eigen::Vector3d& up, const Eigen::Vector3d& at) {
-    _pos = p; // view point
+    _initialPos = _pos = p; // view point
     _up = up.normalized();
-    _at = at;
+    _initialAt = _at = at;
+    
 
     Eigen::Vector3d initialDir = (_at - _pos).normalized();
     Eigen::Vector3d right = initialDir.cross(_up).normalized();
@@ -125,23 +121,47 @@ void Controller::pitch(double rot) {
     _orientation = (q * _orientation).normalized();
 }
 
-void Controller::moveForward() {
-    _pos += 0.01 * (_at - _pos);
+void Controller::moveForward(double factor) {
+    Eigen::Vector3d forward = -(_orientation * Eigen::Vector3d::UnitZ()).normalized();
+    _pos += factor * 0.01 * intendedDistance() * forward;
 }
 
-void Controller::moveBackward() {
-    _pos -= 0.01 * (_at - _pos);
+void Controller::moveBackward(double factor) {
+    Eigen::Vector3d backward = (_orientation * Eigen::Vector3d::UnitZ()).normalized();
+    _pos += factor * 0.01 * intendedDistance() * backward;
 }
 
+void Controller::moveLeft(double factor) {
+    Eigen::Vector3d left = -(_orientation * Eigen::Vector3d::UnitX()).normalized();
+    _pos += factor * 0.01 * intendedDistance() * left;
+}
 
-// Returns a non-normalized view direction
+void Controller::moveRight(double factor) {
+    Eigen::Vector3d right = (_orientation * Eigen::Vector3d::UnitX()).normalized();
+    _pos += factor * 0.01 * intendedDistance() * right;
+}
+
+void Controller::moveUp(double factor) {
+    _pos += factor * 0.01 * intendedDistance() * Eigen::Vector3d::UnitZ();
+}
+
+void Controller::moveDown(double factor) {
+    _pos += factor * 0.01 * intendedDistance() * -Eigen::Vector3d::UnitZ();
+}
+
+// Returns a non-normalized "view" direction
 // mostly for helping get axis to rotate up/down on, hence not normalized (so cross works nicely)
 // deprecate, not viewDir anymore but our "connection" to world center
 Eigen::Vector3d Controller::viewDir() const {
-    return _at - _pos;
+    return _initialAt - _pos;
+}
+
+double Controller::intendedDistance() const {
+    return (_initialAt - _initialPos).norm();
 }
 
 // Gets the axis to rotate up/down around on
+// points to the left of camera
 Eigen::Vector3d Controller::horizontalAxis() const {
     return _up.cross(viewDir()).normalized();
 }

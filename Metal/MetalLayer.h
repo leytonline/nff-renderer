@@ -9,6 +9,7 @@
     id<MTLDevice> _dev;
     id<MTLCommandQueue> _cq;
     id<MTLRenderPipelineState> _pipelineState;
+    id<MTLDepthStencilState> _depthState;
 
     id <MTLBuffer> _verts;
     id <MTLBuffer> _norms;
