@@ -1,7 +1,7 @@
 #include <stdio.h>                 
 #include <vector>        
 #include <SDL2/SDL.h>    
-#include "MetalRasterizer.h"
+#include "MetalRaytracer.h"
 #include "Controller.h"
 #include "ControllerState.h"
 #include <ctime>

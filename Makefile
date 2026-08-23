@@ -3,9 +3,9 @@ CXX = clang++
 CXXFLAGS = -Wall -Wextra -std=c++26 -Iinclude -O2
 EIGEN = -I/opt/homebrew/Cellar/eigen/5.0.1/include/eigen3
 SDL2 = -I/opt/homebrew/Cellar/sdl2/2.32.4/include/ -L/opt/homebrew/Cellar/sdl2/2.32.4/lib/ -lSDL2
-OBJS = obj/Geometry.o obj/Controller.o obj/Nff.o obj/NaiveRasterizer.o obj/Renderer.o obj/ControllerState.o obj/Engine.o obj/MetalRasterizer.o obj/MetalLayer.o
+OBJS = obj/Geometry.o obj/Controller.o obj/Nff.o obj/NaiveRasterizer.o obj/Renderer.o obj/ControllerState.o obj/Engine.o obj/MetalRasterizer.o obj/MetalLayer.o obj/MetalRaytracer.o obj/MetalRaytracingLayer.o
 
-main: main.cpp $(OBJS)
+main: main.cpp $(OBJS) obj/shader.metallib
 	$(CXX) $(CXXFLAGS) $(EIGEN) $(SDL2) $(OBJS) -framework Foundation -framework Metal main.cpp -o main
 
 obj/MetalRasterizer.o: Metal/MetalRasterizer.mm include/MetalRasterizer.h include/Renderer.h
@@ -13,6 +13,12 @@ obj/MetalRasterizer.o: Metal/MetalRasterizer.mm include/MetalRasterizer.h includ
 
 obj/MetalLayer.o: Metal/MetalLayer.mm Metal/MetalLayer.h
 	$(CXX) $(CXXFLAGS) $(EIGEN) -ObjC++ -IMetal -c Metal/MetalLayer.mm -o obj/MetalLayer.o
+
+obj/MetalRaytracer.o: Metal/MetalRaytracer.mm Metal/MetalRaytracingLayer.h include/MetalRaytracer.h include/Renderer.h
+	$(CXX) $(CXXFLAGS) $(EIGEN) -ObjC++ -IMetal -c Metal/MetalRaytracer.mm -o obj/MetalRaytracer.o
+
+obj/MetalRaytracingLayer.o: Metal/MetalRaytracingLayer.mm Metal/MetalRaytracingLayer.h
+	$(CXX) $(CXXFLAGS) $(EIGEN) -ObjC++ -IMetal -c Metal/MetalRaytracingLayer.mm -o obj/MetalRaytracingLayer.o
 
 obj/Engine.o: src/Engine.cpp include/Engine.h
 	$(CXX) $(CXXFLAGS) $(EIGEN) -I/opt/homebrew/Cellar/sdl2/2.32.4/include/ -c src/Engine.cpp -o obj/Engine.o
@@ -35,9 +41,13 @@ obj/NaiveRasterizer.o: src/NaiveRasterizer.cpp include/NaiveRasterizer.h obj/Nff
 obj/Renderer.o: src/Renderer.cpp include/Renderer.h 
 	$(CXX) $(CXXFLAGS) $(EIGEN) -c src/Renderer.cpp -o obj/Renderer.o
 
-shaders: Metal/Shader.metal 
+obj/shader.air: Metal/Shader.metal
 	xcrun -sdk macosx metal -c Metal/Shader.metal -o obj/shader.air
+
+obj/shader.metallib: obj/shader.air
 	xcrun -sdk macosx metallib obj/shader.air -o obj/shader.metallib
+
+shaders: obj/shader.metallib
 
 clean:
 	rm -f obj/*.o
