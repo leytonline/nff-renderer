@@ -28,7 +28,7 @@ int Engine::MainLoop() {
     uint32_t *px = new uint32_t[WIDTH * HEIGHT];    
 
     Nff scene;
-    if (scene.parse("scenes/gears-4.nff") < 0)
+    if (scene.parse("scenes/balls-2.nff") < 0)
     {
         printf("Failed to parse nff image");
         abort();

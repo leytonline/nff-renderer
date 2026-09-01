@@ -102,7 +102,10 @@ void NaiveRasterizer::processVertices(std::vector<Triangle>& transforms, const E
 
     for (unsigned i = 0; i < _nff->_surfaces.size(); i++)
     {
-        Triangle& tri = *_nff->_surfaces[i];
+        Triangle* triangle = dynamic_cast<Triangle*>(_nff->_surfaces[i]);
+        if (triangle == nullptr) continue;
+
+        Triangle& tri = *triangle;
         std::vector<Eigen::Vector3d> shades;
         shadeTriangle(pos, &tri, shades);
         std::vector<ClipVertex> polygon;

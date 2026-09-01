@@ -3,13 +3,16 @@ CXX = g++
 CXXFLAGS = -Wall -Wextra -std=c++23 -Iinclude -O2 -D_USE_MATH_DEFINES -DSDL_MAIN_HANDLED
 EIGEN = -IE:/msys64/ucrt64/include/eigen3
 SDL2 = -IE:/msys64/ucrt64/include -LE:/msys64/ucrt64/lib -lSDL2
-OBJS = obj/Geometry.o obj/Controller.o obj/Nff.o obj/NaiveRasterizer.o obj/Renderer.o obj/ControllerState.o obj/Engine.o
+OBJS = obj/Geometry.o obj/Ray.o obj/Controller.o obj/Nff.o obj/NaiveRasterizer.o obj/Renderer.o obj/ControllerState.o obj/Engine.o
 
 main: main.cpp $(OBJS)
 	$(CXX) $(CXXFLAGS) $(EIGEN) $(OBJS) main.cpp $(SDL2) -o main.exe
 
 obj/Engine.o: src/Engine.cpp include/Engine.h
 	$(CXX) $(CXXFLAGS) $(EIGEN) -IE:/msys64/ucrt64/include -c src/Engine.cpp -o obj/Engine.o
+
+obj/Ray.o: src/Ray.cpp include/Ray.h
+	$(CXX) $(CXXFLAGS) $(EIGEN) -c src/Ray.cpp -o obj/Ray.o
 
 obj/ControllerState.o: src/ControllerState.cpp include/ControllerState.h
 	$(CXX) $(CXXFLAGS) -IE:/msys64/ucrt64/include -c src/ControllerState.cpp -o obj/ControllerState.o
