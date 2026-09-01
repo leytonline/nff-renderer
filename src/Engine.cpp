@@ -28,7 +28,7 @@ int Engine::MainLoop() {
     uint32_t *px = new uint32_t[WIDTH * HEIGHT];    
 
     Nff scene;
-    if (scene.parse("scenes/teapot-3.nff") < 0)
+    if (scene.parse("scenes/gears-4.nff") < 0)
     {
         printf("Failed to parse nff image");
         abort();
@@ -99,7 +99,7 @@ int Engine::MainLoop() {
                             SDL_GetRelativeMouseMode() ? SDL_FALSE : SDL_TRUE
                         );
                     }
-
+                    [[fallthrough]];
                 case SDL_KEYUP:
                     ms.HandleInput(e.key.keysym.sym, e.type == SDL_KEYDOWN);
                     break;
