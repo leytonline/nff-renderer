@@ -63,10 +63,9 @@ int Nff::parse(std::string f) {
     char ch;
     std::string line = "", temp = "", skip = "";
     Fill fill;
-    Eigen::Vector3d coords;
     std::vector<std::string> failBuffer;
     int vertices = 0;
-    Eigen::Vector3d shift;
+    Eigen::Vector3d shift = Eigen::Vector3d::Zero();;
     
 
     while (getline(file, line))
@@ -142,8 +141,8 @@ int Nff::parse(std::string f) {
 
                 std::stringstream base(line);
 
-                Eigen::Vector3d coords;
-                Eigen::Vector3d norm;
+                Eigen::Vector3d coords = Eigen::Vector3d::Zero();
+                Eigen::Vector3d norm = Eigen::Vector3d::Zero();;
 
                 // get the first vertex
                 base >> coords[0] >> coords[1] >> coords[2];

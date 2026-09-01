@@ -54,7 +54,7 @@ void NaiveRasterizer::Render(uint32_t* pixels, const Eigen::Vector3d& pos, const
 
     Eigen::Matrix4d m = calcM(pos, dir);
 
-    // vertex processing -> transform geometry and shade vertices
+    // vertex processing -> transform geometry and shade verticesw
     std::vector<Triangle> transformedGeos;
     processVertices(transformedGeos, pos, m);
 
