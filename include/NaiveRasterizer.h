@@ -18,9 +18,8 @@ public:
     void shadeTriangle(const Eigen::Vector3d&, Triangle*, std::vector<Eigen::Vector3d>&);
     void rasterize(std::vector<Triangle>&);
     void raster(Triangle&);
-    void blend(std::vector<Fragment>*, Eigen::Vector3d*);
     void writeImage(uint32_t*);
-    void processFragments(const Eigen::Vector3d& pos, std::vector<Fragment>*);
+    void processFragments(const Eigen::Vector3d& pos);
     //void SetAxisDebug(bool);
     void SetNff(Nff* n);
 public: // separated for vars

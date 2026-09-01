@@ -61,6 +61,7 @@ void NaiveRasterizer::Render(uint32_t* pixels, const Eigen::Vector3d& pos, const
     // rasterize -> generate fragments based on transformed geometry
     rasterize(transformedGeos);
 
+    if (_fragmentShading) processFragments(pos);
 
     //if (_debug) drawDebugAxes(image, pos);
 
@@ -302,9 +303,10 @@ void NaiveRasterizer::raster(Triangle& t) {
                         frag._color = color;
                         frag._z = z;
                         frag._set = true;
+                        frag._isFragShaded = false;
 
                         // fragment shading
-                         if (_fragmentShading && t._patch)
+                        if (_fragmentShading && t._patch)
                         {
                             Fragment& fragment = _fragments[fragmentIndex];
                             fragment._attrNormal = pa * t._origNorms[0] + pb * t._origNorms[1] + pg * t._origNorms[2];
@@ -316,38 +318,6 @@ void NaiveRasterizer::raster(Triangle& t) {
                     }
                 }
             }
-        }
-    }
-}
-
-// sort fragments
-struct cmpr {
-    bool operator() (Fragment& f1, Fragment& f2) { return f1._z < f2._z; }
-};
-
-// blend the fragments into the image
-void NaiveRasterizer::blend(std::vector<Fragment>* frags, Eigen::Vector3d* im) {
-    for (int i = 0; i < _nff->_res.first * _nff->_res.second; i++, im++)
-    {
-        // assume background color
-        *im = _nff->_bg;
-
-        // if theres no fragments just continue to next iteration
-        if (frags[i].empty()) continue;
-
-        std::sort(frags[i].begin(), frags[i].end(), cmpr());
-
-        // continue to avoid loop inside an if statement
-        if (!_transparent) 
-        {
-            *im = frags[i].begin()->_color;
-            continue;
-        }
-
-        //*im = Eigen::Vector3d(0,0,0);
-        for (std::vector<Fragment>::reverse_iterator fItr = frags[i].rbegin(); fItr < frags[i].rend(); fItr++)
-        {
-            *im = ((_transparency * fItr->_color) + ((1.0 - _transparency) * *im));
         }
     }
 }
@@ -377,40 +347,39 @@ void NaiveRasterizer::writeImage(uint32_t* pixels) {
             }
 
             it->_set = false;
+            it->_isFragShaded = false;
             *pixels = (r << 16) | (g << 8) | b;
         }
     }
 }
 
-void NaiveRasterizer::processFragments(const Eigen::Vector3d& pos, std::vector<Fragment>* f) {
+void NaiveRasterizer::processFragments(const Eigen::Vector3d& pos) {
 
     double intensity = 1 / sqrt(_nff->_lights.size());
 
-    for (int i = 0; i < _nff->_res.first * _nff->_res.second; i++)
+    for (auto it = _fragments.begin(); it != _fragments.end(); it++)
     {
-        for (size_t j = 0; j < f[i].size(); j++)
+        Fragment& frag = *it;
+        if (!frag.isSet()) continue;
+        if (!frag._isFragShaded) continue;
+        Eigen::Vector3d color(0,0,0);
+        for (unsigned k = 0; k < _nff->_lights.size(); k++)
         {
-            Fragment& frag = f[i][j];
-            if (!frag._isFragShaded) continue;
-            Eigen::Vector3d color(0,0,0);
-            // do diffuse and specular calculations per each light
-            for (unsigned k = 0; k < _nff->_lights.size(); k++)
-            {
-                Light& light = _nff->_lights[k];
-                Eigen::Vector3d viewDir = pos - frag._attrPos;
-                Eigen::Vector3d lightDir = light._coords - frag._attrPos;
-                viewDir.normalize(); 
-                lightDir.normalize();
-                Eigen::Vector3d half = (lightDir + viewDir) / (lightDir + viewDir).norm();
-                half.normalize();
-                double diffuse = std::fmax(0, frag._attrNormal.dot(lightDir));
-                double specular = pow(std::fmax(0, frag._attrNormal.dot(half)), frag._attrFill._shine);
-                color += (frag._attrFill._color * diffuse * frag._attrFill._kd + frag._attrFill._ks * Eigen::Vector3d(specular,specular,specular)) * intensity;
-            }
-            f[i][j]._color = color;
+            Light& light = _nff->_lights[k];
+            Eigen::Vector3d viewDir = pos - frag._attrPos;
+            Eigen::Vector3d lightDir = light._coords - frag._attrPos;
+            viewDir.normalize(); 
+            lightDir.normalize();
+            Eigen::Vector3d half = (lightDir + viewDir) / (lightDir + viewDir).norm();
+            half.normalize();
+            double diffuse = std::fmax(0, frag._attrNormal.dot(lightDir));
+            double specular = pow(std::fmax(0, frag._attrNormal.dot(half)), frag._attrFill._shine);
+            color += (frag._attrFill._color * diffuse * frag._attrFill._kd + frag._attrFill._ks * Eigen::Vector3d(specular,specular,specular)) * intensity;
         }
+        frag._color = color;
     }
 }
+
 
 void NaiveRasterizer::SetNff(Nff* n) {
     _nff = n;
