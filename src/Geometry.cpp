@@ -1,6 +1,9 @@
 #include "Geometry.h"
 #include <iostream>
 
+const double& getLastOpaqueDepth();
+const bool& isSet();
+
 #define EV3d Eigen::Vector3d
 Triangle::Triangle(std::vector<EV3d> v, Fill f) : Geometry() {
     _fill = f;
@@ -62,4 +65,12 @@ Light::Light(double x, double y, double z, double r, double g, double b) {
   _color[0] = r;
   _color[1] = g;
   _color[2] = b;
+}
+
+const double& Fragment::getLastOpaqueDepth() const {
+    return _lastOpaqueDepth;
+}
+
+const bool& Fragment::isSet() const {
+    return _set;
 }

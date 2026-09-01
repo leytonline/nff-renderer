@@ -1,4 +1,5 @@
 #include <Eigen/Dense>
+#include <limits>
 
 #ifndef GEOMETRY_H
 #define GEOMETRY_H
@@ -22,21 +23,32 @@ public:
 
 class Geometry {
 public:
-    Geometry() {_patch = false;}
+    Geometry() : _patch(false), _fill(Fill()) {};
     bool _patch;
     Fill _fill;
 };
 
 class Fragment {
 public:
-    Fragment(Eigen::Vector3d c, double z) : 
-        _color(c), _z(z), _attrNormal(Eigen::Vector3d(0,0,0)), _attrFill(Fill()), _isFragShaded(false), _attrPos(Eigen::Vector3d(0,0,0)) {}
+    Fragment() : 
+        _color(Eigen::Vector3d::Zero()), _z(std::numeric_limits<double>::infinity()),
+        _attrNormal(Eigen::Vector3d(0,0,0)), _attrFill(Fill()), 
+        _isFragShaded(false), _attrPos(Eigen::Vector3d(0,0,0)), 
+        _lastOpaqueDepth(std::numeric_limits<double>::infinity()), _set(false) {};
+    Fragment(Eigen::Vector3d c, double z) : Fragment() {
+        _color = c;
+        _z = z;
+    };
     Eigen::Vector3d _color;
     double _z;
     Eigen::Vector3d _attrNormal;
     Fill _attrFill;
     bool _isFragShaded;
     Eigen::Vector3d _attrPos;
+    double _lastOpaqueDepth;
+    bool _set;
+    const double& getLastOpaqueDepth() const;
+    const bool& isSet() const;
 };
 
 class Triangle : public Geometry {

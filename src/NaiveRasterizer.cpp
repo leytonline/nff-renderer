@@ -59,21 +59,12 @@ void NaiveRasterizer::Render(uint32_t* pixels, const Eigen::Vector3d& pos, const
     processVertices(transformedGeos, pos, m);
 
     // rasterize -> generate fragments based on transformed geometry
-    std::vector<Fragment>* fragments = new std::vector<Fragment>[_nff->_res.first * _nff->_res.second]();
-    rasterize(transformedGeos, fragments);
+    rasterize(transformedGeos);
 
-    if (_fragmentShading) processFragments(pos, fragments);
-
-    // blending
-    Eigen::Vector3d* image = new Eigen::Vector3d[_nff->_res.first * _nff->_res.second]();
-    blend(fragments, image);
 
     //if (_debug) drawDebugAxes(image, pos);
 
-    writeImage(image, pixels);
-
-    delete[] fragments;
-    delete[] image;
+    writeImage(pixels);
 }
 
 // get the entire projection matrix M
@@ -206,11 +197,11 @@ void NaiveRasterizer::shadeTriangle(const Eigen::Vector3d& pos, Triangle* t, std
 }
 
 // calculate bounding boxes and generate fragments
-void NaiveRasterizer::rasterize(std::vector<Triangle>& tris, std::vector<Fragment>* frags) {
+void NaiveRasterizer::rasterize(std::vector<Triangle>& tris) {
     for (unsigned i = 0; i < tris.size(); i++)
     {
         // do this per triangle just to avoid a ton of nesting
-        raster(tris[i], frags);
+        raster(tris[i]);
     }
 }
 
@@ -236,7 +227,7 @@ inline double f20(double x, double y, Triangle& t) {
            - t._vertices[0][0] * t._vertices[2][1];
 }
 
-void NaiveRasterizer::raster(Triangle& t, std::vector<Fragment>* frags) {
+void NaiveRasterizer::raster(Triangle& t) {
 
     int bxMin = _nff->_res.first, bxMax = 0, byMin = _nff->_res.second, byMax = 0;
 
@@ -303,19 +294,25 @@ void NaiveRasterizer::raster(Triangle& t, std::vector<Fragment>* frags) {
 
                     if (z < -1.0 || z > 1.0) continue;
 
-                    // add fragment to image vector
                     const size_t fragmentIndex = static_cast<size_t>(j) * _nff->_res.first + i;
-                    frags[fragmentIndex].push_back(Fragment(color, z));
 
-                    // add attributes to fragments if fragment processing
-                    if (_fragmentShading && t._patch)
+                    Fragment& frag = _fragments[fragmentIndex];
+                    if (!frag.isSet() || frag._z > z)
                     {
-                        Fragment& fragment = frags[fragmentIndex].back();
-                        fragment._attrNormal = pa * t._origNorms[0] + pb * t._origNorms[1] + pg * t._origNorms[2];
-                        fragment._attrNormal.normalize();
-                        fragment._attrFill = t._fill;
-                        fragment._isFragShaded = true;
-                        fragment._attrPos = pa * t._origVerts[0] + pb * t._origVerts[1] + pg * t._origVerts[2];
+                        frag._color = color;
+                        frag._z = z;
+                        frag._set = true;
+
+                        // fragment shading
+                         if (_fragmentShading && t._patch)
+                        {
+                            Fragment& fragment = _fragments[fragmentIndex];
+                            fragment._attrNormal = pa * t._origNorms[0] + pb * t._origNorms[1] + pg * t._origNorms[2];
+                            fragment._attrNormal.normalize();
+                            fragment._attrFill = t._fill;
+                            fragment._isFragShaded = true;
+                            fragment._attrPos = pa * t._origVerts[0] + pb * t._origVerts[1] + pg * t._origVerts[2];
+                        }
                     }
                 }
             }
@@ -355,14 +352,31 @@ void NaiveRasterizer::blend(std::vector<Fragment>* frags, Eigen::Vector3d* im) {
     }
 }
 
-void NaiveRasterizer::writeImage(Eigen::Vector3d* im, uint32_t* pixels) {
+void NaiveRasterizer::writeImage(uint32_t* pixels) {
     // outputting the image
     int r, g, b;
+
+    double bgr = _nff->_bg[0], bgg = _nff->_bg[1], bgb = _nff->_bg[2];
+
+    std::vector<Fragment>::iterator it = _fragments.begin();
+
     for (int y=0; y<_nff->_res.second; y++) {
-        for (int x=0; x<_nff->_res.first; x++, im++, pixels++) {
-            r = uint8_t(std::min(1.0, std::max(0.0, (*im)[0])) * 255.0);
-            g = uint8_t(std::min(1.0, std::max(0.0, (*im)[1])) * 255.0);
-            b = uint8_t(std::min(1.0, std::max(0.0, (*im)[2])) * 255.0);
+        for (int x=0; x<_nff->_res.first; x++, it++, pixels++) {
+
+            if (it->isSet())
+            {
+                r = uint8_t(std::min(1.0, std::max(0.0, it->_color[0])) * 255.0);
+                g = uint8_t(std::min(1.0, std::max(0.0, it->_color[1])) * 255.0);
+                b = uint8_t(std::min(1.0, std::max(0.0, it->_color[2])) * 255.0);
+            }
+            else
+            {
+                r = uint8_t(std::min(1.0, std::max(0.0, bgr)) * 255.0);
+                g = uint8_t(std::min(1.0, std::max(0.0, bgg)) * 255.0);
+                b = uint8_t(std::min(1.0, std::max(0.0, bgb)) * 255.0);
+            }
+
+            it->_set = false;
             *pixels = (r << 16) | (g << 8) | b;
         }
     }
@@ -400,6 +414,7 @@ void NaiveRasterizer::processFragments(const Eigen::Vector3d& pos, std::vector<F
 
 void NaiveRasterizer::SetNff(Nff* n) {
     _nff = n;
+    _fragments.resize(n->_res.first * n->_res.second);
 }
 
 // void NaiveRasterizer::SetAxisDebug(bool b) {

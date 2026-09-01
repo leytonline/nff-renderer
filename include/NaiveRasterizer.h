@@ -16,10 +16,10 @@ public:
     Eigen::Matrix4d calcM(const Eigen::Vector3d&, const Eigen::Quaterniond&);
     void processVertices(std::vector<Triangle>&, const Eigen::Vector3d&, Eigen::Matrix4d m);
     void shadeTriangle(const Eigen::Vector3d&, Triangle*, std::vector<Eigen::Vector3d>&);
-    void rasterize(std::vector<Triangle>&, std::vector<Fragment>*);
-    void raster(Triangle&, std::vector<Fragment>*);
+    void rasterize(std::vector<Triangle>&);
+    void raster(Triangle&);
     void blend(std::vector<Fragment>*, Eigen::Vector3d*);
-    void writeImage(Eigen::Vector3d*, uint32_t*);
+    void writeImage(uint32_t*);
     void processFragments(const Eigen::Vector3d& pos, std::vector<Fragment>*);
     //void SetAxisDebug(bool);
     void SetNff(Nff* n);
@@ -30,6 +30,7 @@ public: // separated for vars
     bool _fragmentShading;
     bool _debug;
 private:
+    std::vector<Fragment> _fragments;
     //void drawDebugAxes(Eigen::Vector3d*, const Eigen::Vector3d&);
 
 };
