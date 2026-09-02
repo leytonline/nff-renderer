@@ -18,7 +18,6 @@ class MetalRaytracer : public Renderer {
 public:
     MetalRaytracer();
     ~MetalRaytracer() override;
-
     void Render(uint32_t*, const Eigen::Vector3d&, const Eigen::Quaterniond&) override;
     void SetNff(Nff*);
 

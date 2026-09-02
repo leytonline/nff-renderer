@@ -18,10 +18,8 @@ class MetalRasterizer : public Renderer {
 public:
     MetalRasterizer();
     ~MetalRasterizer();
-
     void Render(uint32_t* pixels, const Eigen::Vector3d& pos, const Eigen::Quaterniond& dir) override;
     void SetNff(Nff* n);
-
 private:
     int loadNff();
     struct Impl;  
