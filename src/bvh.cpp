@@ -18,7 +18,7 @@ const Eigen::Vector3d& AABB::max() const {
 }
 
 // https://tavianator.com/2011/ray_box.html
-bool AABB::intersects(const Ray& r) const {
+bool AABB::intersects(const Ray& r, double t0, double t1) const {
     double tx1, tx2, ty1, ty2, tz1, tz2;
 
     double tmin, tmax;
@@ -42,7 +42,10 @@ bool AABB::intersects(const Ray& r) const {
     tmax = std::min(tmax, std::max(ty1, ty2));
     tmax = std::min(tmax, std::max(tz1, tz2));
 
-    return tmax >= std::max(tmin, 0.0);
+    tmax = std::min(t1, tmax);
+    tmin = std::max(t0, std::max(tmin, 0.0));
+
+    return tmax >= tmin;
 }
 
 double AABB::surfaceArea() const {
@@ -132,7 +135,7 @@ bool BVH::intersect(Ray& r, double t0, double t1, HitRecord& hr) {
 
         BVHNode& curr = _nodes[idx];
 
-        if (!curr.getAABB().intersects(r))
+        if (!curr.getAABB().intersects(r, t0, t1))
         {
             continue;
         }
@@ -181,7 +184,7 @@ bool BVH::intersectAny(Ray& r, double t0, double t1) {
 
         BVHNode& curr = _nodes[idx];
 
-        if (!curr.getAABB().intersects(r))
+        if (!curr.getAABB().intersects(r, t0, t1))
         {
             continue;
         }
