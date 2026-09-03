@@ -7,7 +7,6 @@ NaiveRaytracer::NaiveRaytracer() {
     _jitter = false;
     _phong = false;
     _dof = false;
-    _useBvh = true;
     _apSize = 0;
 }
 
@@ -22,9 +21,6 @@ inline double getRand() { return (double) rand() / RAND_MAX;}
 // the main event of ray tracing
 void NaiveRaytracer::Render(uint32_t* out, const Eigen::Vector3d& pos, const Eigen::Quaterniond& orientation) {
 
-    // the image
-    Eigen::Vector3d *pixels = new Eigen::Vector3d[_nff->_res.first * _nff->_res.second];
-
     // could also do -(_at - _from)
     double dist = (_nff->_from - _nff->_at).norm();
 
@@ -33,18 +29,20 @@ void NaiveRaytracer::Render(uint32_t* out, const Eigen::Vector3d& pos, const Eig
     double increment = (2*h) / _nff->_res.first;
     double l = -h + 0.5*increment;
     double t = h*(((double)_nff->_res.second)/_nff->_res.first) - 0.5*increment;
+    uint8_t red = 0, green = 0, blue = 0;
 
-    double a = 0, b = 0;
+    Eigen::Vector3d forward = (orientation * -Eigen::Vector3d::UnitZ()).normalized();
+    Eigen::Vector3d right = (orientation * Eigen::Vector3d::UnitX()).normalized();
+    Eigen::Vector3d up = (orientation * Eigen::Vector3d::UnitY()).normalized();
 
-    // #pragma omp parallel for
+    #pragma omp parallel for
     for (int j = 0; j < _nff->_res.second; j++)
     {
         // calculate b(j) since going scan line order
         for (int i = 0; i < _nff->_res.first; i++)
         {
             // assume the pixel is going to have the background color
-            Eigen::Vector3d& px = pixels[j * _nff->_res.first + i];
-            px = Eigen::Vector3d::Zero();
+            Eigen::Vector3d px = Eigen::Vector3d::Zero();
 
             for (int p = 0; p < (_jitter ? _samples : 1); p++)
             {
@@ -63,10 +61,10 @@ void NaiveRaytracer::Render(uint32_t* out, const Eigen::Vector3d& pos, const Eig
                     double a = l + (i + pJit)*increment;
                     double b = t - (j + qJit)*increment;
                     // the point we are looking at
-                    Eigen::Vector3d pt = a * _nff->_u + b * _nff->_v + -dist * _nff->_w + _nff->_from;
+                    Eigen::Vector3d pt = a * right + b * up + dist * forward + pos;
 
                     // ray we are projecting
-                    Ray r(pt - _nff->_from, _nff->_from);
+                    Ray r((pt - pos).normalized(), pos);
 
                     double randX = 0, randY = 0;
 
@@ -78,12 +76,12 @@ void NaiveRaytracer::Render(uint32_t* out, const Eigen::Vector3d& pos, const Eig
                             double rand = _apSize * sqrt(getRand());
                             randX = rand * cos(getRand() * 2 * M_PI);
                             randY = rand * sin(getRand() * 2 * M_PI);
-                            Eigen::Vector3d dofEye = _nff->_from + Eigen::Vector3d(randX, randY, 0);
+                            Eigen::Vector3d dofEye = pos + randX * right + randY * up;
                             Eigen::Vector3d dofDir = pt - dofEye;
                             dofDir.normalize();
-                            Eigen::Vector3d converg = dofEye + (_nff->_at - dofEye).norm() * dofDir;
+                            Eigen::Vector3d converg = dofEye + ((pos + dist * forward) - dofEye).norm() * dofDir;
 
-                            Ray dofR(converg - dofEye, dofEye);
+                            Ray dofR((converg - dofEye).normalized(), dofEye);
 
                             // if we're jittering, we have to divide by _samples^4, otherwise dof alone just samples^2
                             px += castRay(dofR, 0, INFINITY) / ((_jitter ? _samples*_samples*_samples*_samples : _samples*_samples));
@@ -92,28 +90,17 @@ void NaiveRaytracer::Render(uint32_t* out, const Eigen::Vector3d& pos, const Eig
 
                     // with no dof, calculate what ill will normally be
                     if (!_dof) px += castRay(r, 0, INFINITY) / (_samples*_samples);
+
+                    red = uint8_t(std::min(1.0, std::max(0.0, px[0])) * 255.0);
+                    green = uint8_t(std::min(1.0, std::max(0.0, px[1])) * 255.0);
+                    blue = uint8_t(std::min(1.0, std::max(0.0, px[2])) * 255.0);
+
+                    // manual index due to paralellization
+                    out[j * _nff->_res.first + i] = (red << 16) | (green << 8) | blue;
                 }
             }
-
         }
     }
-
-    // pointer arithmetic method for writing the completed image
-    Eigen::Vector3d *px = pixels;
-
-    uint8_t r,g,bl;
-    r = g = bl = 0;
-
-    for (int y=0; y<_nff->_res.second; y++) {
-        for (int x=0; x<_nff->_res.first; x++, px++, out++) 
-        {
-            r = uint8_t(std::min(1.0, std::max(0.0, (*px)[0])) * 255.0);
-            g = uint8_t(std::min(1.0, std::max(0.0, (*px)[1])) * 255.0);
-            bl = uint8_t(std::min(1.0, std::max(0.0, (*px)[2])) * 255.0);
-            *out = (r << 16) | (g << 8) | bl;
-        }
-    }
-    delete[] pixels;
 }
 
 Eigen::Vector3d NaiveRaytracer::castRay(Ray& r, double t0, double t1) {
@@ -124,53 +111,12 @@ Eigen::Vector3d NaiveRaytracer::castRay(Ray& r, double t0, double t1) {
 
     bool hit = false;
 
-    std::vector<size_t> indices;
-    if (_useBvh)
-    {
-        indices = _bvh.intersect(r, 0.0, 0.0);
-    }
-    else
-    {
-        indices.resize(_nff->_surfaces.size());
-        std::iota(indices.begin(), indices.end(), 0);
-    }
-    
-
-    for (int i : indices) {
-
-        bool didIntersect = false;
-
-        Geometry* geo = _nff->_surfaces[i];
-
-        // honestly the best way i could think about communicating the tracer's phong
-        // setting to the geometry was to judge: is it a patch and phong? if so dynamic cast
-        // to a triangle patch and intersect it (this will probably crash if phong is on and theres
-        // a non triangle pp )
-        if (geo->_patch && _phong)
-        {
-            // YES, REINTERPRET_CAST IS DANGEROUS UNDER THIS CONDITION
-            // i could have added another parameter, but this worked so its ok
-            // edit: seems like static_cast is faster and won't affect compiler optimization
-            // so im changing from reinterpret_cast to static_cast
-            didIntersect = static_cast<Tripatch*>(geo)->intersectSmooth(r, t0, t1, hr);
-        }
-        else
-        {
-            didIntersect = geo->intersect(r, t0, t1, hr);
-        }
-
-        if (didIntersect) {
-            t1 = hr._t;
-            hr._fill = _nff->_surfaces[i]->_fill;
-            hr._rayDepth = r.getDepth();
-            hr._v = r.getOrigin() - hr._p;
-            hr._v.normalize();
-            hit = true;
-        }
-    }
+    hit = _bvh.intersect(r, t0, t1, hr);
 
     if (hit) {
-    ret = shade(hr);
+        hr._rayDepth = r.getDepth();
+        hr._v = (r.getOrigin() - hr._p).normalized();
+        ret = shade(hr);
     }
 
     return ret;
@@ -189,31 +135,11 @@ Eigen::Vector3d NaiveRaytracer::shade(HitRecord& hr) {
     for (size_t i = 0; i < _nff->_lights.size(); i++)
     {
         Light& light = _nff->_lights[i];
-
-        bool shadow = false;
-
         Eigen::Vector3d lightDir = light._coords - hr._p;
         lightDir.normalize();
         Ray r(lightDir, hr._p);
 
-
-        std::vector<size_t> indices;
-        if (_useBvh)
-        {
-            indices = _bvh.intersect(r, 0.0, 0.0);
-        }
-        else
-        {
-            indices.resize(_nff->_surfaces.size());
-            std::iota(indices.begin(), indices.end(), 0);
-        }
-
-        for (size_t j : indices)
-        {
-            Geometry *geo = _nff->_surfaces[j];
-            HitRecord shadowHr;
-            if (geo->intersect(r, 1e-6, (light._coords - hr._p).norm(), shadowHr)) shadow = true;
-        }
+        bool shadow = _bvh.intersectAny(r, 1e-6, (light._coords - hr._p).norm());    
 
         if (!shadow)
         {

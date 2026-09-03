@@ -15,7 +15,7 @@
 #ifndef TRACER_H
 #define TRACER_H
 
-const int MAX_BOUNCES = 5;
+const int MAX_BOUNCES = 1;
 
 class NaiveRaytracer : public Renderer {
 public:
@@ -32,7 +32,6 @@ public:
     bool _phong;
     bool _dof;
     double _apSize;
-    bool _useBvh;
 };
 
 #endif

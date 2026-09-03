@@ -18,7 +18,7 @@ const Eigen::Vector3d& AABB::max() const {
 }
 
 // https://tavianator.com/2011/ray_box.html
-bool AABB::intersects(const Ray& r) {
+bool AABB::intersects(const Ray& r) const {
     double tx1, tx2, ty1, ty2, tz1, tz2;
 
     double tmin, tmax;
@@ -89,7 +89,7 @@ size_t BVHNode::getCount() const {
     return _count;
 }
 
-AABB BVHNode::getAABB() {
+const AABB& BVHNode::getAABB() const {
     return _aabb;
 }
 
@@ -101,23 +101,26 @@ long long BVHNode::getRight() const {
     return _right;
 }
 
-BVH::BVH() {}
+BVH::BVH() : _geos(nullptr) {
+
+}
 
 // BVH
 BVH::BVH(std::vector<Geometry*>& geo) {
     _indices.resize(geo.size());
     std::iota(_indices.begin(), _indices.end(), 0);
     construct(geo, _indices);
+    _geos = &geo;
 }
 
-std::vector<size_t> BVH::intersect(Ray& r, double t0, double t1) {
+bool BVH::intersect(Ray& r, double t0, double t1, HitRecord& hr) {
     if (!_nodes.size())
     {
         std::cerr << __PRETTY_FUNCTION__ << ": empty BVH" << std::endl; // should handle gracefully, lazy tho
         std::abort();
     }
     
-    std::vector<size_t> ret;
+    bool ret = false;
 
     std::stack<size_t> st;
     st.push(0);
@@ -137,11 +140,16 @@ std::vector<size_t> BVH::intersect(Ray& r, double t0, double t1) {
         if (curr.isLeaf())
         {
             // intersect the geometry
-            ret.insert(
-                ret.end(),
-                _indices.begin() + curr.getStart(), 
-                _indices.begin() + curr.getStart() + curr.getCount()
-            );
+            int offset = curr.getStart();
+            for (int i = 0; i < (int) curr.getCount(); i++)
+            {
+                int idx = _indices[offset + i];
+                if ( (*_geos)[idx]->intersect(r, t0, t1, hr) )
+                {
+                    ret = true;
+                    t1 = hr._t;
+                }
+            }
         }
         else
         {
@@ -152,6 +160,51 @@ std::vector<size_t> BVH::intersect(Ray& r, double t0, double t1) {
     
 
     return ret;
+}
+
+bool BVH::intersectAny(Ray& r, double t0, double t1) {
+    if (!_nodes.size())
+    {
+        std::cerr << __PRETTY_FUNCTION__ << ": empty BVH" << std::endl; // should handle gracefully, lazy tho
+        std::abort();
+    }
+    
+    HitRecord hr; // doesn't get used, but need for param
+
+    std::stack<size_t> st;
+    st.push(0);
+
+    while (!st.empty())
+    {
+        size_t idx = st.top();
+        st.pop();
+
+        BVHNode& curr = _nodes[idx];
+
+        if (!curr.getAABB().intersects(r))
+        {
+            continue;
+        }
+
+        if (curr.isLeaf())
+        {
+            // intersect the geometry
+            int offset = curr.getStart();
+            for (int i = 0; i < (int) curr.getCount(); i++)
+            {
+                int idx = _indices[offset + i];
+                if ( (*_geos)[idx]->intersect(r, t0, t1, hr) ) return true;
+            }
+        }
+        else
+        {
+            st.push(curr.getLeft());
+            st.push(curr.getRight());
+        }
+    }
+    
+
+    return false;
 }
 
 void BVH::construct(std::vector<Geometry*>& geo, std::span<size_t> indices) {

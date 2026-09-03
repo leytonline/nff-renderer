@@ -123,20 +123,6 @@ public:
     double _rad;
 };
 
-class Polygon : public Geometry {
-public:
-    Polygon(std::vector<Eigen::Vector3d>);
-    bool intersect(Ray&, double, double, HitRecord&) const;
-protected:
-};
-
-class Polypatch : public Polygon {
-public:
-    Polypatch(std::vector<Eigen::Vector3d>, std::vector<Eigen::Vector3d>);
-private:
-    std::vector<Eigen::Vector3d> _norms;
-};
-
 #undef EV3d
 
 #endif

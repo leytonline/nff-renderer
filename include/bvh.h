@@ -24,7 +24,7 @@ public:
     const Eigen::Vector3d& min() const;
     const Eigen::Vector3d& max() const;
     double surfaceArea() const;
-    bool intersects(const Ray&);
+    bool intersects(const Ray&) const;
 private:
     // min is first, max is second
     std::pair<Eigen::Vector3d, Eigen::Vector3d> _bounds;
@@ -42,7 +42,7 @@ public:
     void setIndices(size_t start, size_t count);
     size_t getStart() const;
     size_t getCount() const;
-    AABB getAABB();
+    const AABB& getAABB() const;
 private:
     AABB _aabb;
     long long _left, _right; // for the owning BVH, which indices are it's children
@@ -53,7 +53,8 @@ class BVH {
 public: 
     BVH();
     BVH(std::vector<Geometry*>& geo);
-    std::vector<size_t> intersect(Ray&, double, double);
+    bool intersect(Ray&, double, double, HitRecord&);
+    bool intersectAny(Ray&, double, double);
 private:
     void construct(std::vector<Geometry*>&);
     void construct(std::vector<Geometry*>&, std::span<size_t> indices);
@@ -61,6 +62,7 @@ private:
     size_t medianOfSplit(const std::vector<Geometry*>& geo, std::span<size_t>);
     std::vector<size_t> _indices; // indices to original triangle in leaf-order
     std::vector<BVHNode> _nodes;
+    std::vector<Geometry*>* _geos;
 };
 
 
