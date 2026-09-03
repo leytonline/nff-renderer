@@ -1,74 +1,49 @@
 #include "NaiveRaytracer.h"
 
 // constructor
-Tracer::Tracer() {
-    _image.clear();
+NaiveRaytracer::NaiveRaytracer() {
+    _nff = nullptr;
     _samples = 1;
     _jitter = false;
     _phong = false;
     _dof = false;
-    _useBvh = false;
+    _useBvh = true;
     _apSize = 0;
 }
 
-// constructor with NFF input param
-Tracer::Tracer(std::string file) {
-    loadFromFile(file);
-}
-
-// clear existing and parse nff image
-int Tracer::loadFromFile(std::string file) {
-    _image.clear();
-    if (_image.parse(file) < 0)
-    {
-        std::cout << "Loading from file failed" << std::endl;
-        return -1;
-    }
-
-    if (_useBvh) 
-    {
-        std::cout << "USING BVH" << std::endl;
-    }
-
-    _bvh = BVH(_image._surfaces);
-
-    return 0;
+void NaiveRaytracer::SetNff(Nff* n) {
+    _nff = n;
+    _bvh = BVH(n->_surfaces);
 }
 
 // Xi value for jittering (textbook called it Xi in ch. 13)
 inline double getRand() { return (double) rand() / RAND_MAX;}
 
 // the main event of ray tracing
-int Tracer::trace(char* outFile) {
+void NaiveRaytracer::Render(uint32_t* out, const Eigen::Vector3d& pos, const Eigen::Quaterniond& orientation) {
 
     // the image
-    Eigen::Vector3d *pixels = new Eigen::Vector3d[_image._res.first * _image._res.second];
-
-    // theta converted to radians for formula
-    double angleRad = _image._angle * M_PI / 180;
+    Eigen::Vector3d *pixels = new Eigen::Vector3d[_nff->_res.first * _nff->_res.second];
 
     // could also do -(_at - _from)
-    double dist = (_image._from - _image._at).norm();
+    double dist = (_nff->_from - _nff->_at).norm();
 
     // height or size of pixel
-    double h = tan((M_PI/180.0) * (_image._angle/2.0)) * dist;
-    double increment = (2*h) / _image._res.first;
+    double h = tan((M_PI/180.0) * (_nff->_angle/2.0)) * dist;
+    double increment = (2*h) / _nff->_res.first;
     double l = -h + 0.5*increment;
-    double t = h*(((double)_image._res.second)/_image._res.first) - 0.5*increment;
+    double t = h*(((double)_nff->_res.second)/_nff->_res.first) - 0.5*increment;
 
     double a = 0, b = 0;
 
-    int rowsDone = 0;
-    int next = 10;
-
     // #pragma omp parallel for
-    for (int j = 0; j < _image._res.second; j++)
+    for (int j = 0; j < _nff->_res.second; j++)
     {
         // calculate b(j) since going scan line order
-        for (int i = 0; i < _image._res.first; i++)
+        for (int i = 0; i < _nff->_res.first; i++)
         {
             // assume the pixel is going to have the background color
-            Eigen::Vector3d& px = pixels[j * _image._res.first + i];
+            Eigen::Vector3d& px = pixels[j * _nff->_res.first + i];
             px = Eigen::Vector3d::Zero();
 
             for (int p = 0; p < (_jitter ? _samples : 1); p++)
@@ -88,10 +63,10 @@ int Tracer::trace(char* outFile) {
                     double a = l + (i + pJit)*increment;
                     double b = t - (j + qJit)*increment;
                     // the point we are looking at
-                    Eigen::Vector3d pt = a * _image._u + b * _image._v + -dist * _image._w + _image._from;
+                    Eigen::Vector3d pt = a * _nff->_u + b * _nff->_v + -dist * _nff->_w + _nff->_from;
 
                     // ray we are projecting
-                    Ray r(pt - _image._from, _image._from);
+                    Ray r(pt - _nff->_from, _nff->_from);
 
                     double randX = 0, randY = 0;
 
@@ -103,10 +78,10 @@ int Tracer::trace(char* outFile) {
                             double rand = _apSize * sqrt(getRand());
                             randX = rand * cos(getRand() * 2 * M_PI);
                             randY = rand * sin(getRand() * 2 * M_PI);
-                            Eigen::Vector3d dofEye = _image._from + Eigen::Vector3d(randX, randY, 0);
+                            Eigen::Vector3d dofEye = _nff->_from + Eigen::Vector3d(randX, randY, 0);
                             Eigen::Vector3d dofDir = pt - dofEye;
                             dofDir.normalize();
-                            Eigen::Vector3d converg = dofEye + (_image._at - dofEye).norm() * dofDir;
+                            Eigen::Vector3d converg = dofEye + (_nff->_at - dofEye).norm() * dofDir;
 
                             Ray dofR(converg - dofEye, dofEye);
 
@@ -126,29 +101,24 @@ int Tracer::trace(char* outFile) {
     // pointer arithmetic method for writing the completed image
     Eigen::Vector3d *px = pixels;
 
-    // outputting the image
-    std::ofstream out(outFile, std::ios::out | std::ios::binary);
-    out<<"P6"<<"\n"<<_image._res.first<<" "<<_image._res.second<<"\n"<<255<<"\n";
-    unsigned char val;
-    for (int y=0; y<_image._res.second; y++) {
-        for (int x=0; x<_image._res.first; x++, px++) {
-        val = (unsigned char)(std::min(1.0, std::max(0.0, (*px)[0])) * 255.0);
-        out.write ((const char*)&val, sizeof(unsigned char));
-        val = (unsigned char)(std::min(1.0, std::max(0.0, (*px)[1])) * 255.0);;
-        out.write ((const char*)&val, sizeof(unsigned char));
-        val = (unsigned char)(std::min(1.0, std::max(0.0, (*px)[2])) * 255.0);;
-        out.write ((const char*)&val, sizeof(unsigned char));
+    uint8_t r,g,bl;
+    r = g = bl = 0;
+
+    for (int y=0; y<_nff->_res.second; y++) {
+        for (int x=0; x<_nff->_res.first; x++, px++, out++) 
+        {
+            r = uint8_t(std::min(1.0, std::max(0.0, (*px)[0])) * 255.0);
+            g = uint8_t(std::min(1.0, std::max(0.0, (*px)[1])) * 255.0);
+            bl = uint8_t(std::min(1.0, std::max(0.0, (*px)[2])) * 255.0);
+            *out = (r << 16) | (g << 8) | bl;
         }
     }
-    out.close();
     delete[] pixels;
-
-    return 0;
 }
 
-Eigen::Vector3d Tracer::castRay(Ray& r, double t0, double t1) {
+Eigen::Vector3d NaiveRaytracer::castRay(Ray& r, double t0, double t1) {
     HitRecord hr;
-    Eigen::Vector3d ret(_image._bg);
+    Eigen::Vector3d ret(_nff->_bg);
 
     if (r.getDepth() > MAX_BOUNCES) return ret;
 
@@ -161,7 +131,7 @@ Eigen::Vector3d Tracer::castRay(Ray& r, double t0, double t1) {
     }
     else
     {
-        indices.resize(_image._surfaces.size());
+        indices.resize(_nff->_surfaces.size());
         std::iota(indices.begin(), indices.end(), 0);
     }
     
@@ -170,7 +140,7 @@ Eigen::Vector3d Tracer::castRay(Ray& r, double t0, double t1) {
 
         bool didIntersect = false;
 
-        Geometry* geo = _image._surfaces[i];
+        Geometry* geo = _nff->_surfaces[i];
 
         // honestly the best way i could think about communicating the tracer's phong
         // setting to the geometry was to judge: is it a patch and phong? if so dynamic cast
@@ -191,7 +161,7 @@ Eigen::Vector3d Tracer::castRay(Ray& r, double t0, double t1) {
 
         if (didIntersect) {
             t1 = hr._t;
-            hr._fill = _image._surfaces[i]->_fill;
+            hr._fill = _nff->_surfaces[i]->_fill;
             hr._rayDepth = r.getDepth();
             hr._v = r.getOrigin() - hr._p;
             hr._v.normalize();
@@ -206,19 +176,19 @@ Eigen::Vector3d Tracer::castRay(Ray& r, double t0, double t1) {
     return ret;
 }
 
-Eigen::Vector3d Tracer::shade(HitRecord& hr) {
+Eigen::Vector3d NaiveRaytracer::shade(HitRecord& hr) {
 
     Eigen::Vector3d ret(0,0,0);
 
     //return hr._fill._color;
 
-    double intensity = 1 / sqrt(_image._lights.size());
+    double intensity = 1 / sqrt(_nff->_lights.size());
 
     Fill& f = hr._fill;
     
-    for (int i = 0; i < _image._lights.size(); i++)
+    for (size_t i = 0; i < _nff->_lights.size(); i++)
     {
-        Light& light = _image._lights[i];
+        Light& light = _nff->_lights[i];
 
         bool shadow = false;
 
@@ -234,13 +204,13 @@ Eigen::Vector3d Tracer::shade(HitRecord& hr) {
         }
         else
         {
-            indices.resize(_image._surfaces.size());
+            indices.resize(_nff->_surfaces.size());
             std::iota(indices.begin(), indices.end(), 0);
         }
 
         for (size_t j : indices)
         {
-            Geometry *geo = _image._surfaces[j];
+            Geometry *geo = _nff->_surfaces[j];
             HitRecord shadowHr;
             if (geo->intersect(r, 1e-6, (light._coords - hr._p).norm(), shadowHr)) shadow = true;
         }

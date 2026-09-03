@@ -10,21 +10,21 @@
 #include <Eigen/Dense>
 #include <numeric>
 #include <omp.h>
+#include "Renderer.h"
 
 #ifndef TRACER_H
 #define TRACER_H
 
 const int MAX_BOUNCES = 5;
 
-class Tracer {
+class NaiveRaytracer : public Renderer {
 public:
-    Tracer();
-    Tracer(std::string);
+    NaiveRaytracer();
+    void SetNff(Nff* nff);
     int loadFromFile(std::string);
-    int trace(char*);
+    void Render(uint32_t* out, const Eigen::Vector3d& pos, const Eigen::Quaterniond& orientation);
     Eigen::Vector3d castRay(Ray&, double, double);
     Eigen::Vector3d shade(HitRecord&);
-    Nff _image;
     BVH _bvh;
     
     int _samples;

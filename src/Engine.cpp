@@ -28,7 +28,7 @@ int Engine::MainLoop() {
     uint32_t *px = new uint32_t[WIDTH * HEIGHT];    
 
     Nff scene;
-    if (scene.parse("scenes/balls-2.nff") < 0)
+    if (scene.parse("scenes/teapot-3.nff") < 0)
     {
         printf("Failed to parse nff image");
         abort();
@@ -36,7 +36,7 @@ int Engine::MainLoop() {
     //scene.dumpLong();
 
     Controller c;
-    NaiveRasterizer r;
+    NaiveRaytracer r;
     //r.SetAxisDebug(true);
     r.SetNff(&scene);
     c.InitializeView(scene.GetFrom(), scene.GetUp(), scene.GetAt()); // 0,0,0 at (not always ?)

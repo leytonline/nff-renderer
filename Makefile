@@ -3,7 +3,7 @@ CXX = g++
 CXXFLAGS = -Wall -Wextra -std=c++23 -Iinclude -O2 -D_USE_MATH_DEFINES -DSDL_MAIN_HANDLED
 EIGEN = -IE:/msys64/ucrt64/include/eigen3
 SDL2 = -IE:/msys64/ucrt64/include -LE:/msys64/ucrt64/lib -lSDL2
-OBJS = obj/Geometry.o obj/bvh.o obj/Ray.o obj/Controller.o obj/Nff.o obj/NaiveRasterizer.o obj/Renderer.o obj/ControllerState.o obj/Engine.o
+OBJS = obj/Geometry.o obj/bvh.o obj/Ray.o obj/Controller.o obj/Nff.o obj/NaiveRasterizer.o obj/Renderer.o obj/ControllerState.o obj/Engine.o obj/NaiveRaytracer.o
 
 main: main.cpp $(OBJS)
 	$(CXX) $(CXXFLAGS) $(EIGEN) $(OBJS) main.cpp $(SDL2) -o main.exe
@@ -31,6 +31,9 @@ obj/Nff.o: src/Nff.cpp include/Nff.h obj/Geometry.o
 
 obj/NaiveRasterizer.o: src/NaiveRasterizer.cpp include/NaiveRasterizer.h obj/Nff.o obj/Geometry.o
 	$(CXX) $(CXXFLAGS) $(EIGEN) -c src/NaiveRasterizer.cpp -o obj/NaiveRasterizer.o
+
+obj/NaiveRaytracer.o: src/NaiveRaytracer.cpp include/NaiveRaytracer.h obj/Nff.o obj/Geometry.o obj/Ray.o
+	$(CXX) $(CXXFLAGS) $(EIGEN) -c src/NaiveRaytracer.cpp -o obj/NaiveRaytracer.o
 
 obj/Renderer.o: src/Renderer.cpp include/Renderer.h
 	$(CXX) $(CXXFLAGS) $(EIGEN) -c src/Renderer.cpp -o obj/Renderer.o
