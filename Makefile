@@ -1,6 +1,6 @@
 # Compiler
 CXX = g++
-CXXFLAGS = -fopenmp -Wall -Wextra -std=c++23 -Iinclude -O2 -D_USE_MATH_DEFINES -DSDL_MAIN_HANDLED
+CXXFLAGS = -fopenmp -Wall -Wextra -std=c++23 -Iinclude -O3 -D_USE_MATH_DEFINES -DSDL_MAIN_HANDLED
 EIGEN = -IE:/msys64/ucrt64/include/eigen3
 SDL2 = -IE:/msys64/ucrt64/include -LE:/msys64/ucrt64/lib -lSDL2
 OBJS = obj/Geometry.o obj/bvh.o obj/Ray.o obj/Controller.o obj/Nff.o obj/NaiveRasterizer.o obj/Renderer.o obj/ControllerState.o obj/Engine.o obj/NaiveRaytracer.o
