@@ -24,7 +24,7 @@ public:
     const Eigen::Vector3d& min() const;
     const Eigen::Vector3d& max() const;
     double surfaceArea() const;
-    bool intersects(const Ray&, double t0, double t1) const;
+    bool intersects(const Ray&, double t0, double t1, double& near, double& far) const;
 private:
     // min is first, max is second
     std::pair<Eigen::Vector3d, Eigen::Vector3d> _bounds;

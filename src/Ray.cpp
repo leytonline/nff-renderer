@@ -4,6 +4,7 @@ Ray::Ray() {
     _dir << 0,0,0;
     _origin << 0,0,0;
     _depth = 0;
+    _invDir << 0,0,0;
 }
 
 Ray::Ray(Eigen::Vector3d d, Eigen::Vector3d o) {
@@ -18,6 +19,7 @@ const Eigen::Vector3d& Ray::getDir() const {
 
 void Ray::setDir(Eigen::Vector3d v) {
     _dir = v;
+    _invDir = v.cwiseInverse();
 }
 
 const Eigen::Vector3d& Ray::getOrigin() const {
@@ -34,4 +36,8 @@ const int& Ray::getDepth() const {
 
 void Ray::setDepth(int d) {
     _depth = d;
+}
+
+const Eigen::Vector3d& Ray::getInvDir() const {
+    return _invDir;
 }

@@ -18,12 +18,12 @@ const Eigen::Vector3d& AABB::max() const {
 }
 
 // https://tavianator.com/2011/ray_box.html
-bool AABB::intersects(const Ray& r, double t0, double t1) const {
+bool AABB::intersects(const Ray& r, double t0, double t1, double& near, double& far) const {
     double tx1, tx2, ty1, ty2, tz1, tz2;
 
     double tmin, tmax;
 
-    Eigen::Vector3d rayInvDir = r.getDir().cwiseInverse();
+    const Eigen::Vector3d& rayInvDir = r.getInvDir();
 
     tx1 = (min().x() - r.getOrigin().x()) * rayInvDir.x();
     tx2 = (max().x() - r.getOrigin().x()) * rayInvDir.x();
@@ -45,7 +45,10 @@ bool AABB::intersects(const Ray& r, double t0, double t1) const {
     tmax = std::min(t1, tmax);
     tmin = std::max(t0, std::max(tmin, 0.0));
 
-    return tmax >= tmin;
+    far = tmax;
+    near = tmin;
+
+    return far >= near;
 }
 
 double AABB::surfaceArea() const {
@@ -125,6 +128,7 @@ bool BVH::intersect(Ray& r, double t0, double t1, HitRecord& hr) {
     
     bool ret = false;
 
+
     std::stack<size_t> st;
     st.push(0);
 
@@ -133,12 +137,7 @@ bool BVH::intersect(Ray& r, double t0, double t1, HitRecord& hr) {
         size_t idx = st.top();
         st.pop();
 
-        BVHNode& curr = _nodes[idx];
-
-        if (!curr.getAABB().intersects(r, t0, t1))
-        {
-            continue;
-        }
+        BVHNode& curr = _nodes[idx]; 
 
         if (curr.isLeaf())
         {
@@ -153,10 +152,32 @@ bool BVH::intersect(Ray& r, double t0, double t1, HitRecord& hr) {
                     t1 = hr._t;
                 }
             }
+            continue; // avoid nesting
         }
-        else
+
+        double ln, lf, rn, rf;
+        bool left = _nodes[curr.getLeft()].getAABB().intersects(r, t0, t1, ln, lf);
+        bool right = _nodes[curr.getRight()].getAABB().intersects(r, t0, t1, rn, rf);
+        
+        if (left && right)
+        {
+            if (ln < rn)
+            {
+                st.push(curr.getRight());
+                st.push(curr.getLeft());
+            }
+            else
+            {
+                st.push(curr.getLeft());
+                st.push(curr.getRight());
+            }
+        } 
+        else if (left)
         {
             st.push(curr.getLeft());
+        }
+        else if (right)
+        {
             st.push(curr.getRight());
         }
     }
@@ -173,6 +194,7 @@ bool BVH::intersectAny(Ray& r, double t0, double t1) {
     }
     
     HitRecord hr; // doesn't get used, but need for param
+    double near, far;
 
     std::stack<size_t> st;
     st.push(0);
@@ -184,10 +206,8 @@ bool BVH::intersectAny(Ray& r, double t0, double t1) {
 
         BVHNode& curr = _nodes[idx];
 
-        if (!curr.getAABB().intersects(r, t0, t1))
-        {
-            continue;
-        }
+
+        if (!curr.getAABB().intersects(r, t0, t1, near, far)) continue;
 
         if (curr.isLeaf())
         {

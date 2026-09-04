@@ -13,9 +13,11 @@ public:
     void setOrigin(Eigen::Vector3d);
     const int& getDepth() const;
     void setDepth(int);
+    const Eigen::Vector3d& getInvDir() const;
 private:
     Eigen::Vector3d _dir;
     Eigen::Vector3d _origin;
+    Eigen::Vector3d _invDir;
     int _depth;
 };
 
