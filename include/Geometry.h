@@ -1,12 +1,12 @@
+#pragma once
+
 #include <Eigen/Dense>
 #include <limits>
 #include <ostream>
 #include <utility>
 #include <vector>
+#include <numbers>
 #include "Ray.h"
-
-#ifndef GEOMETRY_H
-#define GEOMETRY_H
 
 #define EV3d Eigen::Vector3d
 
@@ -88,6 +88,7 @@ public:
 class Triangle : public Geometry {
 public:
     Triangle();
+    Triangle(EV3d, EV3d, EV3d, Fill);
     Triangle(std::vector<EV3d>, Fill);
     void addVertex(Eigen::Vector3d);
     bool intersect(Ray&, double, double, HitRecord&) const;
@@ -123,6 +124,14 @@ public:
     double _rad;
 };
 
-#undef EV3d
+// realistically just a factory
+class Icosahedron {
+public:
+    Icosahedron();
+    std::vector<Geometry*> toSphere(Eigen::Vector3d c, double r, Fill f, size_t s);
+private:
+    std::vector<Eigen::Vector3d> baseVertices();
+    Eigen::Vector3d midpoint(const Eigen::Vector3d&, const Eigen::Vector3d&, const Eigen::Vector3d&, double);
+};
 
-#endif
+#undef EV3d

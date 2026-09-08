@@ -72,6 +72,7 @@ int Nff::parse(std::string f) {
     Fill fill;
     Eigen::Vector3d coords = Eigen::Vector3d::Zero();
     std::vector<std::string> failBuffer;
+    Icosahedron ico;
     double radius = 0.;
     int vertices = 0;
     
@@ -209,11 +210,19 @@ int Nff::parse(std::string f) {
                 break;
             }
             // sphere parsing
-            case 's':
+            case 's': {
                 ss >> coords[0] >> coords[1] >> coords[2] >> radius;
-                _surfaces.push_back(new Sphere(coords, radius, fill));
-                break;
+                //_surfaces.push_back(new Sphere(coords, radius, fill));
 
+                std::vector<Geometry*> generated = ico.toSphere(coords, radius, fill, 2);
+
+                _surfaces.insert(
+                    _surfaces.end(),
+                    generated.begin(),
+                    generated.end()
+                );
+                break;
+            }
             case 'l': {
                 double x, y, z, r = -1, g = -1, b = -1;
                 ss >> x >> y >> z >> r >> g >> b;

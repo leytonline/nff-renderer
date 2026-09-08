@@ -43,6 +43,12 @@ Triangle::Triangle() : Geometry() {
     _normalOverride = false;
 }
 
+Triangle::Triangle(EV3d a, EV3d b, EV3d c, Fill f) {
+  _vertices = std::vector<Eigen::Vector3d>{a, b, c};
+  _fill = f;
+  _normalOverride = false;
+}
+
 Triangle::Triangle(std::vector<EV3d> v, Fill f) : Geometry(v, f) {
     _normalOverride = false;
 }
@@ -233,6 +239,101 @@ const Eigen::Vector3d& Sphere::getColor() const {
 // <GEOMETRY>
 Eigen::Vector3d Sphere::centroid() const {
   return _center;
+}
+
+// <ICOSAHEDRON>
+Icosahedron::Icosahedron() {}
+
+std::vector<Geometry*> Icosahedron::toSphere(Eigen::Vector3d center, double radius, Fill f, size_t s) {
+
+  std::vector<Eigen::Vector3d> v = baseVertices();
+
+  for (auto& vertex : v) {
+    vertex = center + vertex.normalized() * radius;
+  }
+
+  std::vector<std::vector<Eigen::Vector3d>> verts = {
+    {v[0], v[1], v[8]},
+    {v[0], v[8], v[4]},
+    {v[0], v[4], v[5]},
+    {v[0], v[5], v[10]},
+    {v[0], v[10], v[1]},
+    {v[1], v[6], v[8]},
+    {v[1], v[7], v[6]},
+    {v[1], v[10], v[7]},
+    {v[2], v[5], v[4]},
+    {v[2], v[4], v[9]},
+    {v[2], v[9], v[3]},
+    {v[2], v[3], v[11]},
+    {v[2], v[11], v[5]},
+    {v[3], v[9], v[6]},
+    {v[3], v[6], v[7]},
+    {v[3], v[7], v[11]},
+    {v[4], v[8], v[9]},
+    {v[6], v[9], v[8]},
+    {v[5], v[11], v[10]},
+    {v[7], v[10], v[11]}
+  };
+
+  for (size_t i = 0; i < s; i++)
+  {
+    std::vector<std::vector<Eigen::Vector3d>> curr;
+    curr.reserve(verts.size() * 4);
+
+    for (auto& vert : verts)
+    {
+      const Eigen::Vector3d& a = vert[0];
+      const Eigen::Vector3d& b = vert[1];
+      const Eigen::Vector3d& c = vert[2];
+
+      auto ab = midpoint(a, b, center, radius);
+      auto bc = midpoint(b, c, center, radius);
+      auto ca = midpoint(c, a, center, radius);
+
+      curr.push_back({a, ab, ca});
+      curr.push_back({b, bc, ab});
+      curr.push_back({c, ca, bc});
+      curr.push_back({ab, bc, ca}); 
+    }
+
+    verts = std::move(curr);
+  }
+
+  std::vector<Geometry*> tris;
+  tris.reserve(verts.size());
+
+  for (auto& vert : verts)
+  {
+    tris.push_back(
+      new Triangle({vert[0], vert[1], vert[2]}, f)
+    );
+  } 
+
+  return tris;
+}
+
+std::vector<Eigen::Vector3d> Icosahedron::baseVertices() {
+  constexpr double phi = std::numbers::phi;
+  auto verts = std::vector<Eigen::Vector3d>{
+    Eigen::Vector3d{0, 1, phi},
+    Eigen::Vector3d{0, -1, phi},
+    Eigen::Vector3d{0, 1, -phi},
+    Eigen::Vector3d{0, -1, -phi},
+    Eigen::Vector3d{1, phi, 0},
+    Eigen::Vector3d{-1, phi, 0},
+    Eigen::Vector3d{1, -phi, 0},
+    Eigen::Vector3d{-1, -phi, 0},
+    Eigen::Vector3d{phi, 0, 1},
+    Eigen::Vector3d{phi, 0, -1},
+    Eigen::Vector3d{-phi, 0, 1},
+    Eigen::Vector3d{-phi, 0, -1},
+  };
+  return verts;
+}
+
+Eigen::Vector3d Icosahedron::midpoint(const Eigen::Vector3d& a, const Eigen::Vector3d& b, const Eigen::Vector3d& center, double radius) {
+  Eigen::Vector3d mid = (a + b) / 2.0;
+  return center + (mid - center).normalized() * radius;
 }
 
 Light::Light(double x, double y, double z, double r, double g, double b) {
