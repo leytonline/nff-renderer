@@ -36,7 +36,7 @@ int Engine::MainLoop() {
     //scene.dumpLong();
 
     Controller c;
-    NaiveRaytracer r;
+    NaiveRasterizer r;
     //r.SetAxisDebug(true);
     r.SetNff(&scene);
     c.InitializeView(scene.GetFrom(), scene.GetUp(), scene.GetAt()); // 0,0,0 at (not always ?)
