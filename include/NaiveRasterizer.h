@@ -26,7 +26,6 @@ public: // separated for vars
     Nff *_nff;
     bool _transparent;
     double _transparency;
-    bool _fragmentShading;
     bool _debug;
 private:
     std::vector<Fragment> _fragments;

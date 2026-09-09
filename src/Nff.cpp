@@ -214,7 +214,7 @@ int Nff::parse(std::string f) {
                 ss >> coords[0] >> coords[1] >> coords[2] >> radius;
                 //_surfaces.push_back(new Sphere(coords, radius, fill));
 
-                std::vector<Geometry*> generated = ico.toSphere(coords, radius, fill, 2);
+                std::vector<Geometry*> generated = ico.toSphere(coords, radius, fill, 0);
 
                 _surfaces.insert(
                     _surfaces.end(),

@@ -5,8 +5,8 @@
 #include <numeric>
 #include <sstream>
 
-const double& getLastOpaqueDepth();
-const bool& isSet();
+
+static constexpr bool MAKE_TRIPATCHES = false;
 
 #define EV3d Eigen::Vector3d
 // <GEOMETRY>
@@ -304,8 +304,14 @@ std::vector<Geometry*> Icosahedron::toSphere(Eigen::Vector3d center, double radi
 
   for (auto& vert : verts)
   {
+    std::vector<Eigen::Vector3d> norms;
+    for (size_t i = 0; i < 3; i++)
+    {
+      norms.push_back((vert[i] - center).normalized());
+    }
+
     tris.push_back(
-      new Triangle({vert[0], vert[1], vert[2]}, f)
+      MAKE_TRIPATCHES ? new Tripatch({vert[0], vert[1], vert[2]}, std::move(norms), f) : new Triangle({vert[0], vert[1], vert[2]}, f)
     );
   } 
 

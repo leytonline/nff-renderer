@@ -45,7 +45,6 @@ std::vector<ClipVertex> clipPolygon(const std::vector<ClipVertex>& input, const 
 
 NaiveRasterizer::NaiveRasterizer() {
     _transparent = false;
-    _fragmentShading = false;
     _debug = false;
 }
 
@@ -61,7 +60,7 @@ void NaiveRasterizer::Render(uint32_t* pixels, const Eigen::Vector3d& pos, const
     // rasterize -> generate fragments based on transformed geometry
     rasterize(transformedGeos);
 
-    if (_fragmentShading) processFragments(pos);
+    processFragments(pos);
 
     //if (_debug) drawDebugAxes(image, pos);
 
@@ -309,7 +308,7 @@ void NaiveRasterizer::raster(Triangle& t) {
                         frag._isFragShaded = false;
 
                         // fragment shading
-                        if (_fragmentShading && t._patch)
+                        if (t._patch)
                         {
                             Fragment& fragment = _fragments[fragmentIndex];
                             fragment._attrNormal = pa * t._origNorms[0] + pb * t._origNorms[1] + pg * t._origNorms[2];
@@ -350,6 +349,7 @@ void NaiveRasterizer::writeImage(uint32_t* pixels) {
             }
 
             it->_set = false;
+            it->_z = std::numeric_limits<double>::infinity();
             it->_isFragShaded = false;
             *pixels = (r << 16) | (g << 8) | b;
         }
