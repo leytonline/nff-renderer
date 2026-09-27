@@ -122,7 +122,7 @@ BVH::BVH(std::vector<Geometry*>& geo) {
 bool BVH::intersect(Ray& r, double t0, double t1, HitRecord& hr) {
     if (!_nodes.size())
     {
-        std::cerr << __PRETTY_FUNCTION__ << ": empty BVH" << std::endl; // should handle gracefully, lazy tho
+        std::cerr << __func__ << ": empty BVH" << std::endl; // should handle gracefully, lazy tho
         std::abort();
     }
     
@@ -189,7 +189,7 @@ bool BVH::intersect(Ray& r, double t0, double t1, HitRecord& hr) {
 bool BVH::intersectAny(Ray& r, double t0, double t1) {
     if (!_nodes.size())
     {
-        std::cerr << __PRETTY_FUNCTION__ << ": empty BVH" << std::endl; // should handle gracefully, lazy tho
+        std::cerr << __func__ << ": empty BVH" << std::endl; // should handle gracefully, lazy tho
         std::abort();
     }
     
@@ -277,7 +277,7 @@ void BVH::construct(std::vector<Geometry*>& geo, std::span<size_t> indices) {
 AXIS BVH::determineAxisSplit(std::span<Geometry* const> geo, std::span<size_t> indices) {
     if (geo.empty()) 
     {   
-        std::cerr << __PRETTY_FUNCTION__ << ": empty triangle span" << std::endl;
+        std::cerr << __func__ << ": empty triangle span" << std::endl;
         std::abort();
     }
 

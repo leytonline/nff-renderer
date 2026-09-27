@@ -351,7 +351,7 @@ void NaiveRasterizer::writeImage(uint32_t* pixels) {
             it->_set = false;
             it->_z = std::numeric_limits<double>::infinity();
             it->_isFragShaded = false;
-            *pixels = (r << 16) | (g << 8) | b;
+            *pixels = 0xff000000u | (r << 16) | (g << 8) | b;
         }
     }
 }

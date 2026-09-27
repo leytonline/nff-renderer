@@ -21,14 +21,14 @@ int Engine::MainLoop() {
 
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
     SDL_Texture* texture = SDL_CreateTexture(renderer,
-        SDL_PIXELFORMAT_RGB888,
+        SDL_PIXELFORMAT_ARGB8888,
         SDL_TEXTUREACCESS_STREAMING,
         WIDTH, HEIGHT);
 
     uint32_t *px = new uint32_t[WIDTH * HEIGHT];    
 
     Nff scene;
-    if (scene.parse("scenes/balls-2.nff") < 0)
+    if (scene.parse("scenes/teapot-3.nff") < 0)
     {
         printf("Failed to parse nff image");
         abort();
@@ -36,8 +36,7 @@ int Engine::MainLoop() {
     //scene.dumpLong();
 
     Controller c;
-    NaiveRasterizer r;
-    //r.SetAxisDebug(true);
+    CudaRaytracer r;
     r.SetNff(&scene);
     c.InitializeView(scene.GetFrom(), scene.GetUp(), scene.GetAt()); // 0,0,0 at (not always ?)
 

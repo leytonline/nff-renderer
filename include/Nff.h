@@ -29,6 +29,8 @@ public:
     double _hither;
     std::pair<int, int> _res;
     std::vector<Geometry*> _surfaces;
+    std::vector<Tripatch> _tripatches;
+    std::vector<Sphere> _analyticSpheres;
     std::vector<Light> _lights;
     Eigen::Vector3d GetFrom() const {
         return _from;

@@ -11,7 +11,7 @@ static constexpr bool MAKE_TRIPATCHES = false;
 #define EV3d Eigen::Vector3d
 // <GEOMETRY>
 Geometry::Geometry(std::vector<Eigen::Vector3d> verts, Fill fill) : 
-    _vertices(verts), _patch(false), _fill(fill) {};
+    _vertices(verts), _patch(false), _generatedFromSphere(false), _fill(fill) {};
 
 Eigen::Vector3d Geometry::centroid() const {
     if (_vertices.size() == 0) return Eigen::Vector3d{0,0,0};
@@ -41,16 +41,19 @@ std::pair<Eigen::Vector3d, Eigen::Vector3d> Geometry::getMinMax() const {
 // <TRIANGLE>
 Triangle::Triangle() : Geometry() {
     _normalOverride = false;
+    _type = TRIANGLE;
 }
 
 Triangle::Triangle(EV3d a, EV3d b, EV3d c, Fill f) {
   _vertices = std::vector<Eigen::Vector3d>{a, b, c};
   _fill = f;
   _normalOverride = false;
+  _type = TRIANGLE;
 }
 
 Triangle::Triangle(std::vector<EV3d> v, Fill f) : Geometry(v, f) {
     _normalOverride = false;
+    _type = TRIANGLE;
 }
 
 // add some vertex in v[0], v[1], v[2] order
@@ -134,16 +137,19 @@ bool Triangle::intersect(Ray& r, double t0, double t1, HitRecord& hr) const {
 // <TRIPATCH>
 Tripatch::Tripatch() : Triangle() {
   _patch = true;
+  _type = TRIANGLE;
 } 
 
 Tripatch::Tripatch(std::vector<EV3d> n) : Triangle() {
     _norms = n;
     _patch = true;
+    _type = TRIANGLE;
 }
 
 Tripatch::Tripatch(std::vector<EV3d> v, std::vector<EV3d> n, Fill f) : Triangle(v, f) {
   _patch = true;
   _norms = n;
+  _type = TRIANGLE;
 } 
 
 void Tripatch::addNorm(Eigen::Vector3d n) {
@@ -173,6 +179,7 @@ Sphere::Sphere(Eigen::Vector3d c, double r, Fill fill) {
     _center = c;
     _rad = r;
     _fill = fill;
+    _type = SPHERE;
 }
 
 std::ostream& operator<<(std::ostream& os, const Sphere& s) {
@@ -310,9 +317,12 @@ std::vector<Geometry*> Icosahedron::toSphere(Eigen::Vector3d center, double radi
       norms.push_back((vert[i] - center).normalized());
     }
 
-    tris.push_back(
-      MAKE_TRIPATCHES ? new Tripatch({vert[0], vert[1], vert[2]}, std::move(norms), f) : new Triangle({vert[0], vert[1], vert[2]}, f)
-    );
+    Geometry* tri = MAKE_TRIPATCHES
+      ? static_cast<Geometry*>(new Tripatch({vert[0], vert[1], vert[2]}, std::move(norms), f))
+      : static_cast<Geometry*>(new Triangle({vert[0], vert[1], vert[2]}, f));
+
+    tri->_generatedFromSphere = true;
+    tris.push_back(tri);
   } 
 
   return tris;

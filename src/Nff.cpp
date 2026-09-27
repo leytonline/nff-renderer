@@ -27,6 +27,7 @@ void Nff::clear() {
     _hither = 0;
     _res = std::make_pair(0, 0);
     _surfaces.clear();
+    _analyticSpheres.clear();
 }
 
 void Nff::dump() {
@@ -189,6 +190,7 @@ int Nff::parse(std::string f) {
                         tri->addNorm(norms[vec[2]]);
                         tri->_fill = fill;
                         _surfaces.push_back(tri);
+                        _tripatches.push_back(*tri);
                     }
                     else
                     {
@@ -205,6 +207,9 @@ int Nff::parse(std::string f) {
 
                         tri->_fill = fill;
                         _surfaces.push_back(tri);
+
+                        Eigen::Vector3d computedNormal = (tri->_vertices[1] - tri->_vertices[0]).cross(tri->_vertices[2] - tri->_vertices[0]).normalized();
+                        _tripatches.push_back(Tripatch(tri->_vertices, {computedNormal, computedNormal, computedNormal}, fill));
                     }
                 }
                 break;
@@ -213,6 +218,7 @@ int Nff::parse(std::string f) {
             case 's': {
                 ss >> coords[0] >> coords[1] >> coords[2] >> radius;
                 //_surfaces.push_back(new Sphere(coords, radius, fill));
+                _analyticSpheres.push_back(Sphere(coords, radius, fill));
 
                 std::vector<Geometry*> generated = ico.toSphere(coords, radius, fill, 0);
 

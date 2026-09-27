@@ -10,6 +10,8 @@
 
 #define EV3d Eigen::Vector3d
 
+enum GeometryType {NONE, TRIANGLE, SPHERE};
+
 class Fill {
 public: 
   Fill() : _color(Eigen::Vector3d(0,0,0)), _kd(0.), _ks(0.), _shine(0.), _transmittance(0.), _index(0.) {}
@@ -51,7 +53,7 @@ public:
 
 class Geometry {
 public:
-    Geometry() : _vertices(), _patch(false), _fill(Fill()) {};
+    Geometry() : _vertices(), _patch(false), _generatedFromSphere(false), _fill(Fill()), _type(NONE) {};
     Geometry(std::vector<Eigen::Vector3d>, Fill);
     virtual ~Geometry() = default;
     virtual bool intersect(Ray&, double, double, HitRecord&) const = 0;
@@ -59,7 +61,9 @@ public:
     virtual Eigen::Vector3d centroid() const;
     std::vector<Eigen::Vector3d> _vertices;
     bool _patch;
+    bool _generatedFromSphere;
     Fill _fill;
+    GeometryType _type; // will clean out later
 };
 
 class Fragment {

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cmath>
 #include <algorithm>
 #include <random>
@@ -11,9 +13,6 @@
 #include <numeric>
 #include <omp.h>
 #include "Renderer.h"
-
-#ifndef TRACER_H
-#define TRACER_H
 
 const int MAX_BOUNCES = 1;
 
@@ -33,5 +32,3 @@ public:
     bool _dof;
     double _apSize;
 };
-
-#endif

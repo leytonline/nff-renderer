@@ -1,43 +1,94 @@
-# Compiler
-CXX = g++
-CXXFLAGS = -fopenmp -Wall -Wextra -std=c++23 -Iinclude -O2 -D_USE_MATH_DEFINES -DSDL_MAIN_HANDLED
-EIGEN = -IE:/msys64/ucrt64/include/eigen3
-SDL2 = -IE:/msys64/ucrt64/include -LE:/msys64/ucrt64/lib -lSDL2
-OBJS = obj/Geometry.o obj/bvh.o obj/Ray.o obj/Controller.o obj/Nff.o obj/NaiveRasterizer.o obj/Renderer.o obj/ControllerState.o obj/Engine.o obj/NaiveRaytracer.o
+# MSVC/NMAKE build. Run from an x64 Native Tools prompt, or call vcvars64.bat first.
 
-main: main.cpp $(OBJS)
-	$(CXX) $(CXXFLAGS) $(EIGEN) $(OBJS) main.cpp $(SDL2) -o main.exe
+TARGET = main.exe
+OBJDIR = obj
 
-obj/Engine.o: src/Engine.cpp include/Engine.h
-	$(CXX) $(CXXFLAGS) $(EIGEN) -IE:/msys64/ucrt64/include -c src/Engine.cpp -o obj/Engine.o
+CXX = cl
+NVCC = nvcc
+LINK = link
 
-obj/Ray.o: src/Ray.cpp include/Ray.h
-	$(CXX) $(CXXFLAGS) $(EIGEN) -c src/Ray.cpp -o obj/Ray.o
+!IFNDEF CUDA_COMPUTE
+CUDA_COMPUTE = 89
+!ENDIF
 
-obj/ControllerState.o: src/ControllerState.cpp include/ControllerState.h
-	$(CXX) $(CXXFLAGS) -IE:/msys64/ucrt64/include -c src/ControllerState.cpp -o obj/ControllerState.o
+!IFNDEF CUDA_ROOT
+CUDA_ROOT = E:\Applications\CUDA
+!ENDIF
 
-obj/Geometry.o: src/Geometry.cpp include/Geometry.h
-	$(CXX) $(CXXFLAGS) $(EIGEN) -c src/Geometry.cpp -o obj/Geometry.o
+!IFNDEF DEPS_ROOT
+DEPS_ROOT = E:\VSLibs
+!ENDIF
 
-obj/bvh.o: src/bvh.cpp include/bvh.h obj/Ray.o obj/Geometry.o
-	$(CXX) $(CXXFLAGS) $(EIGEN) -c src/bvh.cpp -o obj/bvh.o
+!IFNDEF EIGEN_INCLUDE_DIR
+EIGEN_INCLUDE_DIR = E:\msys64\ucrt64\include\eigen3
+!ENDIF
 
-obj/Controller.o: src/Controller.cpp include/Controller.h
-	$(CXX) $(CXXFLAGS) $(EIGEN) -c -IE:/msys64/ucrt64/include src/Controller.cpp -o obj/Controller.o
+CUDA_INCLUDE_DIR = $(CUDA_ROOT)\include
+CUDA_LIB_DIR = $(CUDA_ROOT)\lib\x64
+SDL2_INCLUDE_DIR = $(DEPS_ROOT)\include
+SDL2_LIB_DIR = $(DEPS_ROOT)\lib\x64
+SDL2_DLL = $(SDL2_LIB_DIR)\SDL2.dll
 
-obj/Nff.o: src/Nff.cpp include/Nff.h obj/Geometry.o
-	$(CXX) $(CXXFLAGS) $(EIGEN) -c src/Nff.cpp -o obj/Nff.o
+DEFINES = /D_USE_MATH_DEFINES /DSDL_MAIN_HANDLED /DNFF_ENABLE_CUDA
+INCLUDES = /Iinclude /I"$(EIGEN_INCLUDE_DIR)" /I"$(SDL2_INCLUDE_DIR)" /I"$(CUDA_INCLUDE_DIR)"
+CXXFLAGS = /nologo /std:c++20 /EHsc /O2 /W4 /openmp $(DEFINES) $(INCLUDES)
+NVCCFLAGS = -std=c++20 -Iinclude -I"$(EIGEN_INCLUDE_DIR)" -I"$(SDL2_INCLUDE_DIR)" -I"$(CUDA_INCLUDE_DIR)" -Xcompiler /EHsc -O2 --use_fast_math -gencode arch=compute_$(CUDA_COMPUTE),code=sm_$(CUDA_COMPUTE) -D_USE_MATH_DEFINES -DSDL_MAIN_HANDLED -DNFF_ENABLE_CUDA --expt-relaxed-constexpr
+LIBPATHS = /LIBPATH:"$(CUDA_LIB_DIR)" /LIBPATH:"$(SDL2_LIB_DIR)"
+LIBS = SDL2.lib cudart.lib
 
-obj/NaiveRasterizer.o: src/NaiveRasterizer.cpp include/NaiveRasterizer.h obj/Nff.o obj/Geometry.o
-	$(CXX) $(CXXFLAGS) $(EIGEN) -c src/NaiveRasterizer.cpp -o obj/NaiveRasterizer.o
+OBJS = $(OBJDIR)\main.obj $(OBJDIR)\Geometry.obj $(OBJDIR)\bvh.obj $(OBJDIR)\Ray.obj $(OBJDIR)\Controller.obj $(OBJDIR)\Nff.obj $(OBJDIR)\NaiveRasterizer.obj $(OBJDIR)\Renderer.obj $(OBJDIR)\ControllerState.obj $(OBJDIR)\Engine.obj $(OBJDIR)\NaiveRaytracer.obj $(OBJDIR)\CudaRaytracer.obj $(OBJDIR)\DebugUtils.obj
 
-obj/NaiveRaytracer.o: src/NaiveRaytracer.cpp include/NaiveRaytracer.h obj/Nff.o obj/Geometry.o obj/Ray.o
-	$(CXX) $(CXXFLAGS) $(EIGEN) -c src/NaiveRaytracer.cpp -o obj/NaiveRaytracer.o
+all: $(TARGET)
 
-obj/Renderer.o: src/Renderer.cpp include/Renderer.h
-	$(CXX) $(CXXFLAGS) $(EIGEN) -c src/Renderer.cpp -o obj/Renderer.o
+main: $(TARGET)
+
+$(TARGET): $(OBJDIR) $(OBJS)
+	$(LINK) /NOLOGO /OUT:$(TARGET) $(OBJS) $(LIBPATHS) $(LIBS)
+	if exist "$(SDL2_DLL)" copy /Y "$(SDL2_DLL)" . >nul
+
+$(OBJDIR):
+	if not exist "$(OBJDIR)" mkdir "$(OBJDIR)"
+
+$(OBJDIR)\main.obj: main.cpp include\Engine.h include\Controller.h include\CudaRaytracer.h include\NaiveRaytracer.h
+	$(CXX) $(CXXFLAGS) /c main.cpp /Fo$(OBJDIR)\main.obj
+
+$(OBJDIR)\Engine.obj: src\Engine.cpp include\Engine.h include\CudaRaytracer.h
+	$(CXX) $(CXXFLAGS) /c src\Engine.cpp /Fo$(OBJDIR)\Engine.obj
+
+$(OBJDIR)\Ray.obj: src\Ray.cpp include\Ray.h
+	$(CXX) $(CXXFLAGS) /c src\Ray.cpp /Fo$(OBJDIR)\Ray.obj
+
+$(OBJDIR)\ControllerState.obj: src\ControllerState.cpp include\ControllerState.h
+	$(CXX) $(CXXFLAGS) /c src\ControllerState.cpp /Fo$(OBJDIR)\ControllerState.obj
+
+$(OBJDIR)\Geometry.obj: src\Geometry.cpp include\Geometry.h include\Ray.h
+	$(CXX) $(CXXFLAGS) /c src\Geometry.cpp /Fo$(OBJDIR)\Geometry.obj
+
+$(OBJDIR)\bvh.obj: src\bvh.cpp include\bvh.h include\Ray.h include\Geometry.h
+	$(CXX) $(CXXFLAGS) /c src\bvh.cpp /Fo$(OBJDIR)\bvh.obj
+
+$(OBJDIR)\Controller.obj: src\Controller.cpp include\Controller.h include\ControllerState.h
+	$(CXX) $(CXXFLAGS) /c src\Controller.cpp /Fo$(OBJDIR)\Controller.obj
+
+$(OBJDIR)\Nff.obj: src\Nff.cpp include\Nff.h include\Geometry.h
+	$(CXX) $(CXXFLAGS) /c src\Nff.cpp /Fo$(OBJDIR)\Nff.obj
+
+$(OBJDIR)\NaiveRasterizer.obj: src\NaiveRasterizer.cpp include\NaiveRasterizer.h include\Nff.h include\Geometry.h
+	$(CXX) $(CXXFLAGS) /c src\NaiveRasterizer.cpp /Fo$(OBJDIR)\NaiveRasterizer.obj
+
+$(OBJDIR)\NaiveRaytracer.obj: src\NaiveRaytracer.cpp include\NaiveRaytracer.h include\Nff.h include\Geometry.h include\Ray.h include\bvh.h
+	$(CXX) $(CXXFLAGS) /c src\NaiveRaytracer.cpp /Fo$(OBJDIR)\NaiveRaytracer.obj
+
+$(OBJDIR)\CudaRaytracer.obj: CUDA\CudaRaytracer.cu include\CudaRaytracer.h include\Renderer.h include\Nff.h include\Geometry.h include\Ray.h include\bvh.h Makefile
+	$(NVCC) $(NVCCFLAGS) -c CUDA\CudaRaytracer.cu -o $(OBJDIR)\CudaRaytracer.obj
+
+$(OBJDIR)\Renderer.obj: src\Renderer.cpp include\Renderer.h include\Nff.h
+	$(CXX) $(CXXFLAGS) /c src\Renderer.cpp /Fo$(OBJDIR)\Renderer.obj
+
+$(OBJDIR)\DebugUtils.obj: src\DebugUtils.cpp include\DebugUtils.h
+	$(CXX) $(CXXFLAGS) /c src\DebugUtils.cpp /Fo$(OBJDIR)\DebugUtils.obj
 
 clean:
-	rm -f obj/*.o
-	rm -f main.exe
+	@if exist "$(TARGET)" del /Q "$(TARGET)"
+	@if exist "SDL2.dll" del /Q "SDL2.dll"
+	@if exist "$(OBJDIR)" for /R "$(OBJDIR)" %F in (*.obj *.o) do @del /Q "%F"

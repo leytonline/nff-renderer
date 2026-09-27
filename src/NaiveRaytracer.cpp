@@ -96,7 +96,7 @@ void NaiveRaytracer::Render(uint32_t* out, const Eigen::Vector3d& pos, const Eig
                     blue = uint8_t(std::min(1.0, std::max(0.0, px[2])) * 255.0);
 
                     // manual index due to paralellization
-                    out[j * _nff->_res.first + i] = (red << 16) | (green << 8) | blue;
+                    out[j * _nff->_res.first + i] = 0xff000000u | (red << 16) | (green << 8) | blue;
                 }
             }
         }

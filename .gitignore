@@ -4,3 +4,9 @@ main
 main.exe
 main.o
 obj/
+.tmp/
+compile_commands.json
+CudaRaytracerKernels.dll
+CudaRaytracerKernels.exp
+CudaRaytracerKernels.lib
+SDL2.dll
